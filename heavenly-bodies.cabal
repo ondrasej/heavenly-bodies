@@ -1,0 +1,43 @@
+name:                 heavenly-bodies
+version:              0.1.0.0
+synopsis:             A game about rocks in space.
+description:          I created the game as an experiment to see what it means
+                      to create a game (interactive and real-time application)
+                      in Haskell.
+                      
+                      The game uses OpenGL for rendering and SDL2 for everything
+                      else. For "educational purposes" the game does not make
+                      use of any functional reactive programming libraries,
+                      though it ended up with a similar (though simpler) system
+                      of its own.
+license:              Apache
+license-file:         LICENSE
+author:               Ondrej Sykora
+maintainer:           mail@ondrejsykora.com
+copyright:            (c) 2017 Ondrej Sykora
+category:             Game
+build-type:           Simple
+cabal-version:        >=1.8
+
+executable heavenly-bodies
+  main-is:              Main.hs
+  build-depends:        base,
+                        linear,
+                        mtl,
+                        OpenGL,
+                        random,
+                        sdl2 >= 2.0.0,
+                        text
+  hs-source-dirs:       src
+
+Test-Suite geometry-test
+  type:                 exitcode-stdio-1.0
+  main-is:              HBodies/GeometryTest.hs
+  build-depends:        base, hspec
+  hs-source-dirs:       src
+
+Test-Suite time-test
+  type:                 exitcode-stdio-1.0
+  main-is:              HBodies/TimeTest.hs
+  build-depends:        base, hspec
+  hs-source-dirs:       src
