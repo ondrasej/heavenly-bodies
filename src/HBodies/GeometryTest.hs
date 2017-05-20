@@ -13,6 +13,7 @@
 -- limitations under the License.
 
 import HBodies.Geometry
+import qualified HBodies.Time as Time
 import Test.Hspec
 
 main = hspec $do
@@ -104,7 +105,7 @@ main = hspec $do
     it "Updates the position" $do
       let pos = position 0.0 0.0 0.0
           vel = velocity 1.0 2.0 3.0
-          dt = 1.0
+          dt = Time.durationSeconds 1.0
           updated = updatePosition dt pos vel
       getX updated `shouldBe` 1.0
       getY updated `shouldBe` 2.0

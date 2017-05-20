@@ -33,11 +33,11 @@ executable heavenly-bodies
 Test-Suite geometry-test
   type:                 exitcode-stdio-1.0
   main-is:              HBodies/GeometryTest.hs
-  build-depends:        base, hspec
+  build-depends:        base, hspec, sdl2 >= 2.0.0
   hs-source-dirs:       src
 
 Test-Suite time-test
   type:                 exitcode-stdio-1.0
   main-is:              HBodies/TimeTest.hs
-  build-depends:        base, hspec
+  build-depends:        base, hspec, sdl2 >= 2.0.0
   hs-source-dirs:       src
