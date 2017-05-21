@@ -41,15 +41,6 @@ main = hspec $do
       getY otherPos `shouldBe` 2.0
       getRotation otherPos `shouldBe` 4.0
 
-  describe "addPosition" $do
-    it "Adds positions" $do
-      let p1 = position 1.0 2.0 3.0
-          p2 = position 4.0 5.0 6.0
-          p = addPosition p1 p2
-      getX p `shouldBe` 5.0
-      getY p `shouldBe` 7.0
-      getRotation p `shouldBe` 9.0
-
   describe "isCollision" $do
     let p1 = position 0.0 0.0 0.0
         p2 = position 0.0 10.0 0.0

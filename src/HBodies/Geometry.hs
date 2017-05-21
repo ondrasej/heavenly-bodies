@@ -24,7 +24,6 @@ module HBodies.Geometry
     , velocityRadial
 
       -- * Arithmetic and other computation.
-    , addPosition
     , addVelocity
 
     , isCollision
@@ -96,19 +95,6 @@ positionRadial angle radius rotation = Pos
     { getX = radius * cos angle,
       getY = radius * sin angle,
       getRotation = rotation }
-
--- | Addition for position objects.
-addPosition :: Position
-            -- ^ The first position object.
-            -> Position
-            -- ^ The second position object.
-            -> Position
-            -- ^ The sum of the two positions.
-addPosition p1 p2 = Pos { getX = x, getY = y, getRotation = rotation }
-  where
-    x = getX p1 + getX p2
-    y = getY p1 + getY p2
-    rotation = getRotation p1 + getRotation p2
 
 squareDistance :: Position
                -> Position
