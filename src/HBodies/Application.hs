@@ -236,8 +236,8 @@ runEventLoop application = do
         let since_last_frame = Time.diff current_time last_update
             until_next_frame = max Time.zeroDuration
                                    (Time.frameDuration - since_last_frame)
-            seconds_to_wait = Time.secondsFromDuration until_next_frame - 0.001
-            ms_to_wait = floor$ 1000.0 * seconds_to_wait :: CInt
+            seconds_to_wait = Time.secondsFromDuration until_next_frame
+            ms_to_wait = ceiling$ 1000.0 * seconds_to_wait :: CInt
         if ms_to_wait < 1
             then SDL.pollEvent
             else SDL.waitEventTimeout ms_to_wait
