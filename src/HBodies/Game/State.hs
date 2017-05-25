@@ -50,6 +50,10 @@ data UpdateData = UpdateData
     , getInputState :: !Inputs.State
       -- | The accumulated damage to the player.
     , getPlayerDamage :: !Double
+      -- | The asteroid the player collided with in this frame. Contains None
+      -- if there was no collision; contains the last asteroid if the player
+      -- collided with more than one in the same frame.
+    , getAsteroidCollision :: Maybe AsteroidState.State
       -- | The states of the asteroids in the following frame. Note that the
       -- list is reversed before it is used in the State structure of the next
       -- frame to make the order of the asteroids in the list stable.
@@ -101,6 +105,11 @@ asteroids :: Update [AsteroidState.State]
 asteroids = do
     d <- MonadState.get
     return$ getAsteroids$ getCurrentState d
+
+asteroidCollision :: Update (Maybe AsteroidState.State)
+asteroidCollision = do
+    d <- MonadState.get
+    return$ getAsteroidCollision d
 
 -- | Returns the "previous" state in the update monad.
 currentState :: Update State
@@ -157,6 +166,15 @@ randomR range = do
     MonadState.put$ d { getUpdateRandomGenerator = generator' }
     return v
 
+-- | Sets the asteroid the player collided with.
+setAsteroidCollision :: AsteroidState.State
+                     -- ^ The asteroid the player collided with.
+                     -> Update ()
+setAsteroidCollision asteroid = do
+    d <- MonadState.get
+    return$ getAsteroidCollision d
+    MonadState.put$ d { getAsteroidCollision = Just asteroid }
+
 -- | Modifies the player state in the update.
 updatePlayer :: PlayerState.State
              -- ^ The new state of the player.
@@ -185,6 +203,7 @@ runUpdate duration inputs old_state code = update
         , getDuration = duration
         , getInputState = inputs
         , getPlayerDamage = 0.0
+        , getAsteroidCollision = Nothing
         , getUpdatedAsteroids = []
         , getUpdatedParticles = []
         , getUpdatedPlayer = getPlayer old_state

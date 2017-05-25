@@ -101,6 +101,7 @@ update asteroid = do
     let sphere = collisionSphere asteroid
     when (PlayerState.isCollision sphere player) $do
         GameState.addPlayerDamage 10.0
+        GameState.setAsteroidCollision asteroid
     let old_position = getPosition asteroid
         old_velocity = getVelocity asteroid
         raw_position =
