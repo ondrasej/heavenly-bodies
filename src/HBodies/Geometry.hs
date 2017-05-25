@@ -31,6 +31,10 @@ module HBodies.Geometry
     , normalizeRotation
     , updatePosition
 
+    , unitVelocity
+    , velocityNorm
+    , dotProduct
+
       -- * Bounded arithmetic
     , BoundState(..)
     , boundState
@@ -174,6 +178,37 @@ updatePosition duration position velocity = Pos
     , getRotation = getRotation position + delta_time * getDRotation velocity }
   where
     delta_time = Time.secondsFromDuration duration
+
+-- | Normalizes the velocity: changes the size of the vector to 1, preserving
+-- its direction. Zero velocity is returned unmodified.
+unitVelocity :: Velocity -> Velocity
+unitVelocity v = Vel { getDx = dx, getDy = dy, getDRotation = drotation }
+  where
+    -- TODO(ondrasej): Update the rotation, preferably using the same bouncing
+    -- logic as for the player.
+    drotation = getDRotation v
+    (dx, dy) = if norm == 0.0
+               then (0.0, 0.0)
+               else (getDx v / norm, getDy v / norm)
+    norm = velocityNorm v
+
+-- | Computes the Euclidean norm (length) of the velocity.
+velocityNorm :: Velocity -> Double
+velocityNorm v = sqrt$ dx * dx + dy * dy
+  where
+    dx = getDx v
+    dy = getDy v
+
+-- | Computes the dot product of two velocities.
+dotProduct :: Velocity
+           -- ^ The first velocity.
+           -> Velocity
+           -- ^ The second velocity.
+           -> Double
+dotProduct v1 v2 = dot_x + dot_y
+  where
+    dot_x = getDx v1 * getDx v2
+    dot_y = getDy v1 * getDy v2
 
 -- | A constant for 2*PI.
 two_pi :: Double

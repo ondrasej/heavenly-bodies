@@ -12,6 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+import Control.Monad (forM_)
 import HBodies.Geometry
 import qualified HBodies.Time as Time
 import Test.Hspec
@@ -101,3 +102,35 @@ main = hspec $do
       getX updated `shouldBe` 1.0
       getY updated `shouldBe` 2.0
       getRotation updated `shouldBe` 3.0
+
+  describe "velocityNorm" $do
+    it "Computes the norm" $do
+      let vel = velocity 3.0 4.0 1.0
+      velocityNorm vel `shouldBe` 5.0
+    it "Can handle zero velocity" $do
+      let vel = velocity 0.0 0.0 1.0
+      velocityNorm vel `shouldBe` 0.0
+
+  describe "unitVelocity" $do
+    it "Preserves the direction" $do
+      let vel = velocity 3.0 4.0 1.0
+          unit = unitVelocity vel
+      getDx unit `shouldBe` 3.0 / 5.0
+      getDy unit `shouldBe` 4.0 / 5.0
+      getDRotation unit `shouldBe` 1.0
+    it "Does not crash with zero velocity" $do
+      let vel = velocity 0.0 0.0 0.0
+      unitVelocity vel `shouldBe` vel
+    it "Normalizes the length to 1" $do
+      let vels = [velocity 1.0 2.0 3.0,
+                  velocity (-4.0) 2.1 3.2,
+                  velocity 10.0 1.0 0.0]
+          isAlmostOne x = abs (x - 1.0) < 1e-15
+      forM_ vels $ \vel -> do
+          velocityNorm (unitVelocity vel) `shouldSatisfy` isAlmostOne
+
+  describe "dotProduct" $do
+    it "Computes the dot product" $do
+      let v1 = velocity 1.0 10.0 2.0
+          v2 = velocity 0.5 1.0 3.0
+      dotProduct v1 v2 `shouldBe` 10.5
