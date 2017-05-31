@@ -19,20 +19,20 @@ module HBodies.Geometry
     , position
     , positionRadial
 
-    , Velocity(getDx, getDy, getDRotation)
-    , velocity
-    , velocityRadial
+    , Direction(getDx, getDy, getDRotation)
+    , direction
+    , directionRadial
 
       -- * Arithmetic and other computation.
-    , addVelocity
+    , addDirection
 
     , isCollision
 
     , normalizeRotation
     , updatePosition
 
-    , unitVelocity
-    , velocityNorm
+    , unitDirection
+    , directionNorm
     , dotProduct
 
       -- * Bounded arithmetic
@@ -40,7 +40,7 @@ module HBodies.Geometry
     , boundState
     , screenBoundState
     , boundedPosition
-    , boundedVelocity
+    , boundedDirection
     , BoundedRotation
     , bounceRotation
     , keepRotation
@@ -63,14 +63,14 @@ data Position = Pos
     , getRotation :: !Double }
     deriving (Eq, Ord, Read, Show)
 
--- | Represents the velocity of an object in the game space. The velocity is
--- defined as the velocity along the X and Y axis, and the rotation speed.
-data Velocity = Vel
-      -- | The velocity along the X axis.
+-- | Represents the direction of an object in the game space. The direction is
+-- defined as the direction along the X and Y axis, and the rotation speed.
+data Direction = Dir
+      -- | The direction along the X axis.
     { getDx :: !Double
-      -- | The velocity along the Y axis.
+      -- | The direction along the Y axis.
     , getDy :: !Double
-      -- | The rotation velocity.
+      -- | The rotation direction.
     , getDRotation :: !Double }
     deriving (Eq, Ord, Read, Show)
 
@@ -121,94 +121,94 @@ isCollision (pos1, rad1) (pos2, rad2) = square_distance < square_radius_sum
     square_radius_sum = radius_sum * radius_sum
     radius_sum = rad1 + rad2
 
--- | Creates a new velocity object with the given coordinates.
-velocity :: Double
-         -- ^ The X delta.
-         -> Double
-         -- ^ The Y delta.
-         -> Double
-         -- ^ The rotation delta.
-         -> Velocity
-         -- ^ The new velocity object.
-velocity dx dy drotation = Vel
+-- | Creates a new direction object with the given coordinates.
+direction :: Double
+          -- ^ The X delta.
+          -> Double
+          -- ^ The Y delta.
+          -> Double
+          -- ^ The rotation delta.
+          -> Direction
+          -- ^ The new direction object.
+direction dx dy drotation = Dir
     { getDx = dx
     , getDy = dy
     , getDRotation = drotation }
 
--- | Creates a new velocity object with the given radial coordinates.
-velocityRadial :: Double
-               -- ^ The angle (in radians).
-               -> Double
-               -- ^ The radius.
-               -> Double
-               -- ^ The rotation delta.
-               -> Velocity
-               -- ^ The new velocity object.
-velocityRadial angle distance drotation = Vel
+-- | Creates a new direction object with the given radial coordinates.
+directionRadial :: Double
+                -- ^ The angle (in radians).
+                -> Double
+                -- ^ The radius.
+                -> Double
+                -- ^ The rotation delta.
+                -> Direction
+                -- ^ The new direction object.
+directionRadial angle distance drotation = Dir
     { getDx = distance * cos angle
     , getDy = distance * sin angle
     , getDRotation = drotation }
 
--- | Addition for velocity objects.
-addVelocity :: Velocity
-            -- ^ The first velocity object.
-            -> Velocity
-            -- ^ The second velocity object.
-            -> Velocity
-            -- ^ The sum of the two velocities.
-addVelocity v1 v2 = Vel { getDx = dx, getDy = dy, getDRotation = drotation }
+-- | Addition for direction objects.
+addDirection :: Direction
+             -- ^ The first direction object.
+             -> Direction
+             -- ^ The second direction object.
+             -> Direction
+             -- ^ The sum of the two direction vectors.
+addDirection d1 d2 = Dir { getDx = dx, getDy = dy, getDRotation = drotation }
   where
-    dx = getDx v1 + getDx v2
-    dy = getDy v1 + getDy v2
-    drotation = getDRotation v1 + getDRotation v2
+    dx = getDx d1 + getDx d2
+    dy = getDy d1 + getDy d2
+    drotation = getDRotation d1 + getDRotation d2
 
--- | Updates the given position with the velocity over a given time interval.
--- Mathematically, updatePosition dt pos v = pos + dt * v.
+-- | Updates the given position with the direction over a given time interval.
+-- Mathematically, updatePosition dt pos d = pos + dt * d.
 updatePosition :: Time.Duration
                -- ^ The length of the time interval.
                -> Position
                -- ^ The original position.
-               -> Velocity
-               -- ^ The velocity.
+               -> Direction
+               -- ^ The direction.
                -> Position
                -- ^ The updated position.
-updatePosition duration position velocity = Pos
-    { getX = getX position + delta_time * getDx velocity
-    , getY = getY position + delta_time * getDy velocity
-    , getRotation = getRotation position + delta_time * getDRotation velocity }
+updatePosition duration position direction = Pos
+    { getX = getX position + delta_time * getDx direction
+    , getY = getY position + delta_time * getDy direction
+    , getRotation = getRotation position + delta_time * getDRotation direction }
   where
     delta_time = Time.secondsFromDuration duration
 
--- | Normalizes the velocity: changes the size of the vector to 1, preserving
--- its direction. Zero velocity is returned unmodified.
-unitVelocity :: Velocity -> Velocity
-unitVelocity v = Vel { getDx = dx, getDy = dy, getDRotation = drotation }
+-- | Normalizes the direction: changes the size of the vector to 1, preserving
+-- its direction. Zero direction is returned unmodified.
+unitDirection :: Direction -> Direction
+unitDirection d = Dir { getDx = dx, getDy = dy, getDRotation = drotation }
   where
     -- TODO(ondrasej): Update the rotation, preferably using the same bouncing
     -- logic as for the player.
-    drotation = getDRotation v
+    drotation = getDRotation d
     (dx, dy) = if norm == 0.0
                then (0.0, 0.0)
-               else (getDx v / norm, getDy v / norm)
-    norm = velocityNorm v
+               else (getDx d / norm, getDy d / norm)
+    norm = directionNorm d
 
--- | Computes the Euclidean norm (length) of the velocity.
-velocityNorm :: Velocity -> Double
-velocityNorm v = sqrt$ dx * dx + dy * dy
+-- | Computes the Euclidean norm (length) of the direction.
+directionNorm :: Direction -> Double
+directionNorm d = sqrt$ dx * dx + dy * dy
   where
-    dx = getDx v
-    dy = getDy v
+    dx = getDx d
+    dy = getDy d
 
--- | Computes the dot product of two velocities.
-dotProduct :: Velocity
-           -- ^ The first velocity.
-           -> Velocity
-           -- ^ The second velocity.
+-- | Computes the dot product of two direction vectors.
+dotProduct :: Direction
+           -- ^ The first direction.
+           -> Direction
+           -- ^ The second direction.
            -> Double
-dotProduct v1 v2 = dot_x + dot_y
+dotProduct d1 d2 = dot_x + dot_y
   where
-    dot_x = getDx v1 * getDx v2
-    dot_y = getDy v1 * getDy v2
+    dot_x = getDx d1 * getDx d2
+    dot_y = getDy d1 * getDy d2
 
 -- | A constant for 2*PI.
 two_pi :: Double
@@ -318,22 +318,22 @@ boundedPosition boundedRotation pos =
     old_y = getY pos
     old_rotation = getRotation pos
 
--- | Updates the velocity of the player based on the bounds of the screen - if
--- the player hits the edge of the screen, reverse the velocity to make them
+-- | Updates the direction of the player based on the bounds of the screen - if
+-- the player hits the edge of the screen, reverse the direction to make them
 -- bounce.
-boundedVelocity :: Position
+boundedDirection :: Position
                 -- ^ The position of the player in the current frame.
-                -> Velocity
-                -- ^ The velocity of the player in the previous frame.
-                -> Velocity
-                -- ^ The new velocity of the player.
-boundedVelocity pos old_velocity =
-    velocity new_dx new_dy new_drotation
+                -> Direction
+                -- ^ The direction of the player in the previous frame.
+                -> Direction
+                -- ^ The new direction of the player.
+boundedDirection pos old_direction =
+    direction new_dx new_dy new_drotation
   where
     (new_dx, new_dy) = case screenBoundState pos of
         (InBound, InBound) -> (old_dx, old_dy)
         (InBound, _)       -> (old_dx, -old_dy)
         (_, InBound)       -> (-old_dx, old_dy)
-    new_drotation = getDRotation old_velocity
-    old_dx = getDx old_velocity
-    old_dy = getDy old_velocity
+    new_drotation = getDRotation old_direction
+    old_dx = getDx old_direction
+    old_dy = getDy old_direction

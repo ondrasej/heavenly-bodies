@@ -31,8 +31,8 @@ data State = State
     {
       -- | The current position of the asteroid.
       getPosition :: !Geometry.Position
-      -- | The current velocity of the asteroid.
-    , getVelocity :: !Geometry.Velocity
+      -- | The current direction of the asteroid.
+    , getDirection :: !Geometry.Direction
       -- | The shape of the asteroid. It can be rendered as a line loop along
       -- all the vertices of the asteroid.
     , getVertices :: [GL.Vertex2 GL.GLdouble]

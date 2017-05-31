@@ -52,33 +52,33 @@ main = hspec $do
     it "Does not report collision on touch" $do
       isCollision (p1, 5.0) (p2, 5.0) `shouldBe` False
 
-  describe "velocity" $do
-    it "Creates a new velocity" $do
-      let vel = velocity 1.0 2.0 3.0
-      getDx vel `shouldBe` 1.0
-      getDy vel `shouldBe` 2.0
-      getDRotation vel `shouldBe` 3.0
+  describe "direction" $do
+    it "Creates a new direction" $do
+      let dir = direction 1.0 2.0 3.0
+      getDx dir `shouldBe` 1.0
+      getDy dir `shouldBe` 2.0
+      getDRotation dir `shouldBe` 3.0
 
-  describe "velocityRadial" $do
+  describe "directionRadial" $do
     it "Creates a new position" $do
-      let vel = velocityRadial 0.0 1.0 2.0
-      getDx vel `shouldBe` 1.0
-      getDy vel `shouldBe` 0.0
-      getDRotation vel `shouldBe` 2.0
+      let dir = directionRadial 0.0 1.0 2.0
+      getDx dir `shouldBe` 1.0
+      getDy dir `shouldBe` 0.0
+      getDRotation dir `shouldBe` 2.0
 
-      let otherVel = velocityRadial (pi / 2.0) 2.0 4.0
-      abs (getDx otherVel) `shouldSatisfy` (< 1e-15)
-      getDy otherVel `shouldBe` 2.0
-      getDRotation otherVel `shouldBe` 4.0
+      let otherDir = directionRadial (pi / 2.0) 2.0 4.0
+      abs (getDx otherDir) `shouldSatisfy` (< 1e-15)
+      getDy otherDir `shouldBe` 2.0
+      getDRotation otherDir `shouldBe` 4.0
 
-  describe "addVelocity" $do
-    it "Adds velocities" $do
-      let v1 = velocity 1.0 2.0 3.0
-          v2 = velocity 4.0 5.0 6.0
-          v = addVelocity v1 v2
-      getDx v `shouldBe` 5.0
-      getDy v `shouldBe` 7.0
-      getDRotation v `shouldBe` 9.0
+  describe "addDirection" $do
+    it "Adds directions" $do
+      let d1 = direction 1.0 2.0 3.0
+          d2 = direction 4.0 5.0 6.0
+          d = addDirection d1 d2
+      getDx d `shouldBe` 5.0
+      getDy d `shouldBe` 7.0
+      getDRotation d `shouldBe` 9.0
 
   describe "normalizeRotation" $do
     it "Does not change rotation that is in bounds" $do
@@ -96,41 +96,41 @@ main = hspec $do
   describe "updatePosition" $do
     it "Updates the position" $do
       let pos = position 0.0 0.0 0.0
-          vel = velocity 1.0 2.0 3.0
+          dir = direction 1.0 2.0 3.0
           dt = Time.durationSeconds 1.0
-          updated = updatePosition dt pos vel
+          updated = updatePosition dt pos dir
       getX updated `shouldBe` 1.0
       getY updated `shouldBe` 2.0
       getRotation updated `shouldBe` 3.0
 
-  describe "velocityNorm" $do
+  describe "directionNorm" $do
     it "Computes the norm" $do
-      let vel = velocity 3.0 4.0 1.0
-      velocityNorm vel `shouldBe` 5.0
-    it "Can handle zero velocity" $do
-      let vel = velocity 0.0 0.0 1.0
-      velocityNorm vel `shouldBe` 0.0
+      let dir = direction 3.0 4.0 1.0
+      directionNorm dir `shouldBe` 5.0
+    it "Can handle zero direction" $do
+      let dir = direction 0.0 0.0 1.0
+      directionNorm dir `shouldBe` 0.0
 
-  describe "unitVelocity" $do
+  describe "unitDirection" $do
     it "Preserves the direction" $do
-      let vel = velocity 3.0 4.0 1.0
-          unit = unitVelocity vel
+      let dir = direction 3.0 4.0 1.0
+          unit = unitDirection dir
       getDx unit `shouldBe` 3.0 / 5.0
       getDy unit `shouldBe` 4.0 / 5.0
       getDRotation unit `shouldBe` 1.0
-    it "Does not crash with zero velocity" $do
-      let vel = velocity 0.0 0.0 0.0
-      unitVelocity vel `shouldBe` vel
+    it "Does not crash with zero direction" $do
+      let dir = direction 0.0 0.0 0.0
+      unitDirection dir `shouldBe` dir
     it "Normalizes the length to 1" $do
-      let vels = [velocity 1.0 2.0 3.0,
-                  velocity (-4.0) 2.1 3.2,
-                  velocity 10.0 1.0 0.0]
+      let dirs = [direction 1.0 2.0 3.0,
+                  direction (-4.0) 2.1 3.2,
+                  direction 10.0 1.0 0.0]
           isAlmostOne x = abs (x - 1.0) < 1e-15
-      forM_ vels $ \vel -> do
-          velocityNorm (unitVelocity vel) `shouldSatisfy` isAlmostOne
+      forM_ dirs $ \dir -> do
+          directionNorm (unitDirection dir) `shouldSatisfy` isAlmostOne
 
   describe "dotProduct" $do
     it "Computes the dot product" $do
-      let v1 = velocity 1.0 10.0 2.0
-          v2 = velocity 0.5 1.0 3.0
-      dotProduct v1 v2 `shouldBe` 10.5
+      let d1 = direction 1.0 10.0 2.0
+          d2 = direction 0.5 1.0 3.0
+      dotProduct d1 d2 `shouldBe` 10.5

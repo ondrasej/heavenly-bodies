@@ -29,8 +29,8 @@ import qualified HBodies.Time as Time
 data State = State
     { -- | The current position of the player.
       getPosition :: !Geometry.Position
-      -- | The current velocity of the player.
-    , getVelocity :: !Geometry.Velocity
+      -- | The current direction of the player.
+    , getDirection :: !Geometry.Direction
       -- | The current health of the player. The health is a value between 0 and
       -- 100. When the health reaches 0, the player is dead and the game ends.
     , getHealth :: !Double

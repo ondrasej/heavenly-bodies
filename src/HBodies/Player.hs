@@ -45,7 +45,7 @@ import qualified HBodies.Time as Time
 new :: State
 new = State
     { getPosition = Geometry.position 0.0 0.0 0.0
-    , getVelocity = Geometry.velocity 0.0 0.0 0.0
+    , getDirection = Geometry.direction 0.0 0.0 0.0
     , getHealth = Params.player_max_health
     , getInvincibilityEnd = Time.infinitePast
     , getLastShot = Time.startTime }
@@ -118,15 +118,15 @@ update = do
     damage <- GameState.playerDamage
     current_frame_time <- GameState.currentFrameTime
     let old_position = getPosition old_state
-        old_velocity = getVelocity old_state
+        old_direction = getDirection old_state
         new_position = updatePosition duration
                                       inputs
                                       old_position
-                                      old_velocity
-        new_velocity = updatePlayerVelocity duration
-                                            inputs
-                                            old_position
-                                            old_velocity
+                                      old_direction
+        new_direction = updatePlayerDirection duration
+                                              inputs
+                                              old_position
+                                              old_direction
         old_invincibility_end = getInvincibilityEnd old_state
         is_invincible = current_frame_time < old_invincibility_end
         old_health = getHealth old_state
@@ -141,7 +141,7 @@ update = do
     GameState.updatePlayer$ old_state
         { getPosition = Geometry.boundedPosition Geometry.bounceRotation
                                                  new_position
-        , getVelocity = Geometry.boundedVelocity new_position new_velocity
+        , getDirection = Geometry.boundedDirection new_position new_direction
         , getHealth = new_health
         , getInvincibilityEnd = new_invincible_time
         , getLastShot = getLastShot old_state }
@@ -159,16 +159,17 @@ update = do
                 GameState.randomR Params.engine_particle_brightness_range
             let particle_angle =
                     Geometry.getRotation old_position + angle + deviation
-                particle_velocity_base =
-                    Geometry.velocityRadial particle_angle speed 0.0
-                particle_velocity = Geometry.addVelocity particle_velocity_base
-                                                         old_velocity
+                particle_direction_base =
+                    Geometry.directionRadial particle_angle speed 0.0
+                particle_direction =
+                    Geometry.addDirection particle_direction_base
+                                          old_direction
                 lifespan = Time.durationSeconds lifespan_seconds
                 particle_end_time = Time.add current_time lifespan
                 color = GLUtils.color3D brightness brightness brightness
                 new_particle =
                     Particle.newRegular old_position
-                                        particle_velocity
+                                        particle_direction
                                         particle_end_time
                                         color
                                         Params.engine_particle_vertices
@@ -177,18 +178,18 @@ update = do
     addParticleIfKeyPressed (Inputs.acceleratePressed) pi
     addParticleIfKeyPressed (Inputs.deceleratePressed) 0.0
 
--- | Updates the position of the player based on the previous velocity.
+-- | Updates the position of the player based on the previous direction.
 updatePosition :: Time.Duration
                -> Inputs.State
                -> Geometry.Position
-               -> Geometry.Velocity
+               -> Geometry.Direction
                -> Geometry.Position
-updatePosition duration inputs old_position old_velocity =
+updatePosition duration inputs old_position old_direction =
     new_position { Geometry.getRotation = new_rotation }
   where
     new_position = Geometry.updatePosition duration
                                            old_position
-                                           old_velocity
+                                           old_direction
     new_rotation = old_rotation + delta_seconds * rotation_multiplier
     old_rotation = Geometry.getRotation old_position
     delta_seconds = Time.secondsFromDuration duration
@@ -201,29 +202,29 @@ updatePosition duration inputs old_position old_velocity =
     right = Inputs.turnRightPressed inputs
 
 
--- | Updates the velocity of the player based on the inputs.
+-- | Updates the direction of the player based on the inputs.
 -- TODO(ondrasej): Slow the player down when they are shooting.
 -- TODO(ondrasej): Slow the player down when they hit something.
-updatePlayerVelocity :: Time.Duration
-                     -- ^ The duration since the last frame.
-                     -> Inputs.State
-                     -- ^ The inputs.
-                     -> Geometry.Position
-                     -- ^ The previous position of the player.
-                     -> Geometry.Velocity
-                     -- ^ The velocity of the player in the previous frame.
-                     -> Geometry.Velocity
-                     -- ^ The new velocity.
-updatePlayerVelocity duration inputs old_position old_velocity = new_velocity
+updatePlayerDirection :: Time.Duration
+                      -- ^ The duration since the last frame.
+                      -> Inputs.State
+                      -- ^ The inputs.
+                      -> Geometry.Position
+                      -- ^ The previous position of the player.
+                      -> Geometry.Direction
+                      -- ^ The direction of the player in the previous frame.
+                      -> Geometry.Direction
+                      -- ^ The new direction.
+updatePlayerDirection duration inputs old_position old_direction = new_direction
   where
-    new_velocity = Geometry.velocity new_dx new_dy 0.0
-    new_dx = Params.slowdown_factor * Geometry.getDx old_velocity +
-             Params.acceleration * velocity_multiplier * cos rotation
-    new_dy = Params.slowdown_factor * Geometry.getDy old_velocity +
-             Params.acceleration * velocity_multiplier * sin rotation
+    new_direction = Geometry.direction new_dx new_dy 0.0
+    new_dx = Params.slowdown_factor * Geometry.getDx old_direction +
+             Params.acceleration * direction_multiplier * cos rotation
+    new_dy = Params.slowdown_factor * Geometry.getDy old_direction +
+             Params.acceleration * direction_multiplier * sin rotation
     rotation = Geometry.getRotation old_position
 
-    velocity_multiplier = case (accelerate, decelerate) of
+    direction_multiplier = case (accelerate, decelerate) of
         (True, False) -> 1.0
         (False, True) -> -1.0
         _ -> 0.0

@@ -25,8 +25,8 @@ import qualified HBodies.Time as Time
 data State = State
     { -- | The position of the particle.
       getPosition :: !Geometry.Position
-      -- | The velocity of the particle.
-    , getVelocity :: !Geometry.Velocity
+      -- | The direction of the particle.
+    , getDirection :: !Geometry.Direction
       -- | The time at which the particle will disappear.
     , getEndTime :: Time.Time
       -- | The color of the particle.

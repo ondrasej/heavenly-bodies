@@ -36,13 +36,13 @@ import qualified HBodies.GLUtils as GLUtils
 import HBodies.Particle.State
 import qualified HBodies.Time as Time
 
--- | Initializes a new particle with the given position, velocity, lifespan,
+-- | Initializes a new particle with the given position, direction, lifespan,
 -- color and number of vertices. The shape of the particle will be a regular
 -- n-gon with the given number of vertices and the given radius.
 newRegular :: Geometry.Position
            -- ^ The position of the particle.
-           -> Geometry.Velocity
-           -- ^ The velocity of the particle.
+           -> Geometry.Direction
+           -- ^ The direction of the particle.
            -> Time.Time
            -- ^ The lifespan of the particle; the particle will disappear after
            -- the given time.
@@ -54,9 +54,9 @@ newRegular :: Geometry.Position
            -- ^ The radius of the particle.
            -> State
            -- ^ The new particle.
-newRegular position velocity end_time color num_vertices radius = State
+newRegular position direction end_time color num_vertices radius = State
     { getPosition = position
-    , getVelocity = velocity
+    , getDirection = direction
     , getEndTime = end_time
     , getColor = color
     , getRadius = radius
@@ -95,6 +95,6 @@ update particle = do
         collision = List.any (AsteroidState.isCollision sphere) asteroids
     unless (expired || collision) $do
         let position = getPosition particle
-            velocity = getVelocity particle
-            new_position = Geometry.updatePosition duration position velocity
+            direction = getDirection particle
+            new_position = Geometry.updatePosition duration position direction
         GameState.addUpdatedParticle$ particle { getPosition = new_position }

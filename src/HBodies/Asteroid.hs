@@ -43,11 +43,11 @@ newRandom :: (Double, Double)
           -> (Double, Double)
           -- ^ The range for the position of the asteroid on the Y axis.
           -> (Double, Double)
-          -- ^ The range for the velocity of the asteroid on the X axis.
+          -- ^ The range for the direction of the asteroid on the X axis.
           -> (Double, Double)
-          -- ^ The range for the velocity of the asteroid on the Y axis.
+          -- ^ The range for the direction of the asteroid on the Y axis.
           -> (Double, Double)
-          -- ^ The range for the rotation velocity of the asteroid.
+          -- ^ The range for the rotation direction of the asteroid.
           -> (Double, Double)
           -- ^ The range for the radius of the asteroid.
           -> (Int, Int)
@@ -74,7 +74,7 @@ newRandom x_range y_range radius_range dx_range dy_range drotation_range
         return$ GLUtils.vertex2D x y
     return$ State
         { getPosition = Geometry.position x y 0.0
-        , getVelocity = Geometry.velocity dx dy dr
+        , getDirection = Geometry.direction dx dy dr
         , getVertices = vertices
         , getHealth = health
         , getRadius = snd radius_range
@@ -103,11 +103,11 @@ update asteroid = do
         GameState.addPlayerDamage 10.0
         GameState.setAsteroidCollision asteroid
     let old_position = getPosition asteroid
-        old_velocity = getVelocity asteroid
+        old_direction = getDirection asteroid
         raw_position =
-            Geometry.updatePosition duration old_position old_velocity
+            Geometry.updatePosition duration old_position old_direction
         new_position =
             Geometry.boundedPosition (Geometry.keepRotation) raw_position 
-        new_velocity = Geometry.boundedVelocity raw_position old_velocity
+        new_direction = Geometry.boundedDirection raw_position old_direction
     GameState.addUpdatedAsteroid$ asteroid { getPosition = new_position
-                                           , getVelocity = new_velocity }
+                                           , getDirection = new_direction }
