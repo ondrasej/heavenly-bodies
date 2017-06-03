@@ -36,6 +36,12 @@ Test-Suite geometry-test
   build-depends:        base, hspec, sdl2 >= 2.0.0
   hs-source-dirs:       src
 
+Test-Suite math-test
+  type:                 exitcode-stdio-1.0
+  main-is:              HBodies/MathTest.hs
+  build-depends:        base, hspec
+  hs-source-dirs:       src
+
 Test-Suite time-test
   type:                 exitcode-stdio-1.0
   main-is:              HBodies/TimeTest.hs
