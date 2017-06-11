@@ -17,6 +17,8 @@ import HBodies.Geometry
 import qualified HBodies.Time as Time
 import Test.Hspec
 
+isAlmost c x = abs (x - c) < 1e-15
+
 main = hspec $do
   describe "position" $do
     it "Creates a new position" $do
@@ -52,6 +54,51 @@ main = hspec $do
     it "Does not report collision on touch" $do
       isCollision (p1, 5.0) (p2, 5.0) `shouldBe` False
 
+  describe "collisionTime" $do
+    it "Computes collision time when they collide" $do
+      let p1 = position 0.0 0.0 0.0
+          d1 = direction 1.0 0.0 0.0
+          r1 = 1.0
+          p2 = position 5.0 0.0 0.0
+          d2 = direction (-1.0) 0.0 0.0
+          r2 = 2.0
+          ctime = collisionTime p1 d1 r1 p2 d2 r2
+      ctime `shouldBe` Just (Time.durationSeconds 1.0)
+    it "Computes collision time when they touch" $do
+      let p1 = position 0.0 0.0 0.0
+          d1 = direction 0.0 0.0 0.0
+          r1 = 1.0
+          p2 = position 10.0 2.0 0.0
+          d2 = direction (-1.0) 0.0 0.0
+          r2 = 1.0
+          ctime = collisionTime p1 d1 r1 p2 d2 r2
+      ctime `shouldBe` Just (Time.durationSeconds 10.0)
+    it "Detects when they miss each other in time" $do
+      let p1 = position 10.0 0.0 0.0
+          d1 = direction (-1.0) 0.0 0.0
+          r1 = 0.5
+          p2 = position 0.0 5.0 0.0
+          d2 = direction 0.0 (-1.0) 0.0
+          r2 = 0.5
+      collisionTime p1 d1 r1 p2 d2 r2 `shouldBe` Nothing
+    it "Detects when they move in opposite directions" $do
+      let p1 = position 0.0 0.0 0.0
+          d1 = direction 0.0 (-1.0) 0.0
+          r1 = 0.5
+          p2 = position 0.0 5.0 0.0
+          d2 = direction 0.0 1.0 0.0
+          r2 = 0.5
+          ctime = collisionTime p1 d1 r1 p2 d2 r2
+      ctime `shouldBe` Just (Time.durationSeconds (-3.0))
+    it "Detects when they move in the same direction" $do
+      let p1 = position 0.0 0.0 0.0
+          d1 = direction 1.0 0.0 0.0
+          r1 = 0.1
+          p2 = position 1.0 0.0 0.0
+          d2 = direction 1.0 0.0 0.0
+          r2 = 0.1
+      collisionTime p1 d1 r1 p2 d2 r2 `shouldBe` Nothing
+
   describe "direction" $do
     it "Creates a new direction" $do
       let dir = direction 1.0 2.0 3.0
@@ -71,14 +118,40 @@ main = hspec $do
       getDy otherDir `shouldBe` 2.0
       getDRotation otherDir `shouldBe` 4.0
 
+  describe "positionDelta" $do
+    it "computes the delta" $do
+      let p1 = position 1.0 2.0 0.5
+          p2 = position 4.0 3.0 0.0
+          d = positionDelta p1 p2
+      getDx d `shouldBe` 3.0
+      getDy d `shouldBe` 1.0
+      getDRotation d `shouldBe` (-0.5)
+
   describe "addDirection" $do
     it "Adds directions" $do
       let d1 = direction 1.0 2.0 3.0
           d2 = direction 4.0 5.0 6.0
-          d = addDirection d1 d2
+          d = d1 +. d2
       getDx d `shouldBe` 5.0
       getDy d `shouldBe` 7.0
       getDRotation d `shouldBe` 9.0
+
+  describe "diffDirection" $do
+    it "Computes the difference" $do
+      let d1 = direction 1.0 5.0 3.0
+          d2 = direction (-2.0) 3.0 1.5
+          d = d1 -. d2
+      getDx d `shouldBe` 3.0
+      getDy d `shouldBe` 2.0
+      getDRotation d `shouldBe` 1.5
+
+  describe "multiplyDirection" $do
+    it "Multiplies direction"$ do
+      let d = direction 1.0 2.0 (1.5 * pi)
+          md = 2.0 *. d
+      getDx md `shouldBe` 2.0
+      getDy md `shouldBe` 4.0
+      getDRotation md `shouldBe` 3.0 * pi
 
   describe "normalizeRotation" $do
     it "Does not change rotation that is in bounds" $do
@@ -103,6 +176,29 @@ main = hspec $do
       getY updated `shouldBe` 2.0
       getRotation updated `shouldBe` 3.0
 
+  describe "bouncedDirection" $do
+    it "Bounces from axis aligned planes" $do
+      let dir = direction 0.0 (-1.0) 2.0
+          norm = direction 0.0 1.0 0.0
+          bounced = bouncedDirection dir norm
+      getDx bounced `shouldBe` 0.0
+      getDy bounced `shouldBe` 1.0
+      getDRotation bounced `shouldBe` 2.0
+    it "Bounces from axis aligned planes 2" $do
+      let dir = direction 0.0 1.0 3.0
+          norm = direction 0.0 1.0 0.0
+          bounced = bouncedDirection dir norm
+      getDx bounced `shouldBe` 0.0
+      getDy bounced `shouldBe` (-1.0)
+      getDRotation bounced `shouldBe` 3.0
+    it "Bounces from unaligned planes" $do
+      let dir = direction 1.0 0.0 0.0
+          norm = direction (-1.0) 1.0 0.0
+          bounced = bouncedDirection dir norm
+      getDx bounced `shouldSatisfy` isAlmost 0.0
+      getDy bounced `shouldSatisfy` isAlmost 1.0
+      getDRotation bounced `shouldBe` 0.0
+
   describe "directionNorm" $do
     it "Computes the norm" $do
       let dir = direction 3.0 4.0 1.0
@@ -125,9 +221,8 @@ main = hspec $do
       let dirs = [direction 1.0 2.0 3.0,
                   direction (-4.0) 2.1 3.2,
                   direction 10.0 1.0 0.0]
-          isAlmostOne x = abs (x - 1.0) < 1e-15
       forM_ dirs $ \dir -> do
-          directionNorm (unitDirection dir) `shouldSatisfy` isAlmostOne
+          directionNorm (unitDirection dir) `shouldSatisfy` isAlmost 1.0
 
   describe "dotProduct" $do
     it "Computes the dot product" $do

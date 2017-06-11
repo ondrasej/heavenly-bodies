@@ -22,11 +22,13 @@ module HBodies.Geometry
     , Direction(getDx, getDy, getDRotation)
     , direction
     , directionRadial
+    , positionDelta
 
       -- * Arithmetic and other computation.
-    , addDirection
+    , (+.), (-.), (*.)
 
     , isCollision
+    , collisionTime
 
     , normalizeRotation
     , updatePosition
@@ -34,6 +36,7 @@ module HBodies.Geometry
     , unitDirection
     , directionNorm
     , dotProduct
+    , bouncedDirection
 
       -- * Bounded arithmetic
     , BoundState(..)
@@ -50,6 +53,7 @@ module HBodies.Geometry
     ) where
 
 import qualified HBodies.Game.Params as Params
+import qualified HBodies.Math as Math
 import qualified HBodies.Time as Time
 
 -- | Represents the position of an object in the game space. The position is
@@ -121,6 +125,39 @@ isCollision (pos1, rad1) (pos2, rad2) = square_distance < square_radius_sum
     square_radius_sum = radius_sum * radius_sum
     radius_sum = rad1 + rad2
 
+-- | Computes the amount of time after which the two spheres at the given
+-- positions moving in the given directions collide. Returns Nothing if they do
+-- not collide. Note that the function assumes that the two spheres at their
+-- current positions do not collide.
+collisionTime :: Position
+              -- ^ The position of the first sphere.
+              -> Direction
+              -- ^ The direction of the first sphere.
+              -> Double
+              -- ^ The radius of the first sphere.
+              -> Position
+              -- ^ The position of the second sphere.
+              -> Direction
+              -- ^ The direction of the second sphere.
+              -> Double
+              -- ^ The radius of the second sphere.
+              -> Maybe Time.Duration
+              -- ^ The time after which the spheres collide, or Nothing if they
+              -- do not collide.
+collisionTime pos1 dir1 rad1 pos2 dir2 rad2 =
+    if isNaN s1 then Nothing
+    else Just$ Time.durationSeconds s1
+  where
+    (s1, s2) = Math.quadraticEquation a b c
+    a = ddir_x * ddir_x + ddir_y * ddir_y
+    b = 2 * (ddir_x * dpos_x + ddir_y * dpos_y)
+    c = dpos_x * dpos_x + dpos_y * dpos_y - dist * dist
+    dpos_x = getX pos1 - getX pos2
+    dpos_y = getY pos1 - getY pos2
+    ddir_x = getDx dir1 - getDx dir2
+    ddir_y = getDy dir1 - getDy dir2
+    dist = rad1 + rad2
+
 -- | Creates a new direction object with the given coordinates.
 direction :: Double
           -- ^ The X delta.
@@ -149,18 +186,51 @@ directionRadial angle distance drotation = Dir
     , getDy = distance * sin angle
     , getDRotation = drotation }
 
--- | Addition for direction objects.
-addDirection :: Direction
-             -- ^ The first direction object.
-             -> Direction
-             -- ^ The second direction object.
-             -> Direction
-             -- ^ The sum of the two direction vectors.
-addDirection d1 d2 = Dir { getDx = dx, getDy = dy, getDRotation = drotation }
+-- | Computes the direction from the first position to the second one.
+positionDelta :: Position
+              -- ^ The first position.
+              -> Position
+              -- ^ The second position.
+              -> Direction
+              -- ^ The direction between them.
+positionDelta p1 p2 = Dir { getDx = dx, getDy = dy, getDRotation = drotation }
   where
-    dx = getDx d1 + getDx d2
-    dy = getDy d1 + getDy d2
-    drotation = getDRotation d1 + getDRotation d2
+    dx = getX p2 - getX p1
+    dy = getY p2 - getY p1
+    drotation = normalizeRotation$ getRotation p2 - getRotation p1
+
+-- | Applies the given binary operation to the components of the direction.
+opDirection :: (Double -> Double -> Double)
+            -- ^ The opertion applied to the components.
+            -> Direction
+            -- ^ The left-hand side direction.
+            -> Direction
+            -- ^ The right-hand side direction.
+            -> Direction
+            -- ^  The result.
+opDirection op d1 d2 = Dir { getDx = dx, getDy = dy, getDRotation = dr }
+  where
+    dx = getDx d1 `op` getDx d2
+    dy = getDy d1 `op` getDy d2
+    dr = getDRotation d1 `op` getDRotation d2
+
+infixl 5 +.
+-- | Addition for direction objects.
+(+.) :: Direction -> Direction -> Direction
+(+.) = opDirection (+)
+
+infixl 5 -.
+(-.) :: Direction -> Direction -> Direction
+(-.) = opDirection (-)
+
+-- | Multiplies a direction by a given constant factor.
+(*.) :: Double -> Direction -> Direction
+c *. d = Dir { getDx = dx, getDy = dy, getDRotation = dr }
+  where
+    dx = c * getDx d
+    dy = c * getDy d
+    dr = c * getDRotation d
+infixr 6 *.
 
 -- | Updates the given position with the direction over a given time interval.
 -- Mathematically, updatePosition dt pos d = pos + dt * d.
@@ -178,6 +248,22 @@ updatePosition duration position direction = Pos
     , getRotation = getRotation position + delta_time * getDRotation direction }
   where
     delta_time = Time.secondsFromDuration duration
+
+-- | Computes the direction after bouncing from a plane with the given normal
+-- vector. Note that the function does not modify the rotation component of the
+-- direction.
+bouncedDirection :: Direction
+                 -> Direction
+                 -> Direction
+bouncedDirection dir normal = new_dir { getDRotation = old_drotation }
+  where
+    unit_normal = unitDirection normal
+    reverse_dir = (-1.0) *. dir
+    dot = dotProduct reverse_dir unit_normal
+    projection = dot *. unit_normal
+    delta = projection -. reverse_dir
+    new_dir = projection +. delta
+    old_drotation = getDRotation dir
 
 -- | Normalizes the direction: changes the size of the vector to 1, preserving
 -- its direction. Zero direction is returned unmodified.
