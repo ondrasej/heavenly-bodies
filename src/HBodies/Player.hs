@@ -29,11 +29,14 @@ module HBodies.Player
     ) where
 
 import Control.Monad (when)
+import qualified Data.Maybe as Maybe
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=))
+import qualified HBodies.Asteroid.State as AsteroidState
 import qualified HBodies.Game.Params as Params
 import qualified HBodies.Game.State as GameState
 import qualified HBodies.Geometry as Geometry
+import HBodies.Geometry ((+.))
 import qualified HBodies.GLUtils as GLUtils
 import qualified HBodies.Inputs as Inputs
 import qualified HBodies.Particle as Particle
@@ -117,17 +120,8 @@ update = do
     duration <- GameState.duration
     damage <- GameState.playerDamage
     current_frame_time <- GameState.currentFrameTime
-    let old_position = getPosition old_state
-        old_direction = getDirection old_state
-        new_position = updatePosition duration
-                                      inputs
-                                      old_position
-                                      old_direction
-        new_direction = updatePlayerDirection duration
-                                              inputs
-                                              old_position
-                                              old_direction
-        old_invincibility_end = getInvincibilityEnd old_state
+    -- Update the health and the invincibility status of the player.
+    let old_invincibility_end = getInvincibilityEnd old_state
         is_invincible = current_frame_time < old_invincibility_end
         old_health = getHealth old_state
         new_health = if is_invincible then old_health
@@ -138,6 +132,73 @@ update = do
             then Time.add current_frame_time
                           Params.player_invincibility_duration
             else old_invincibility_end
+    -- Update the position of the player.
+    let old_position = getPosition old_state
+        old_direction = getDirection old_state
+        -- Compute the new position and direction as if there was no collision.
+        raw_new_position = updatePosition duration
+                                          inputs
+                                          old_position
+                                          old_direction
+        raw_new_direction = updatePlayerDirection duration
+                                                  inputs
+                                                  old_position
+                                                  old_direction
+    -- Computes the position and the direction of the player after bouncing from
+    -- the asteroid.
+    -- TODO(ondrasej): Replace it with a more physically-inspired computation.
+    -- The current one simply flips the direction of the player from the
+    -- bounding sphere of the asteroid, but there are no changes in the momentum
+    -- of the asteroid or the player. So, while it works for a fast-moving light
+    -- player vs slow-moving heavy asteroid, it would break in all other cases.
+    -- This should be replaces by a more realistic computation, i.e. one that
+    -- takes momentum into account and that distributes the momentum between the
+    -- colliding objects.
+    let bounceFromAsteroid asteroid = case maybe_bounce_time of
+            Nothing -> (raw_new_position, raw_new_direction)
+            Just _  -> (bounced_position, bounced_direction)
+          where
+            -- Note that only this variable is computed each time the function
+            -- is evaluated. Everything below is evaluated only when
+            -- maybe_bounce_time is not Nothing.
+            maybe_bounce_time = Geometry.collisionTime old_position
+                                                       old_direction
+                                                       Params.player_radius
+                                                       old_asteroid_position
+                                                       old_asteroid_direction
+                                                       asteroid_radius
+            -- Since the player and the code are already in collision, it is
+            -- normal that bounce_time is a small negative number.
+            bounce_time = Maybe.fromJust maybe_bounce_time
+            remaining_time = duration - bounce_time
+            bounced_direction = Geometry.bouncedDirection old_direction
+                                                          bounce_normal
+            bounced_position = Geometry.updatePosition remaining_time
+                                                       bounce_player_position
+                                                       bounced_direction
+
+            bounce_player_position = Geometry.updatePosition bounce_time
+                                                             old_position
+                                                             old_direction
+            bounce_asteroid_position =
+                Geometry.updatePosition bounce_time
+                                        old_asteroid_position
+                                        old_asteroid_direction
+            bounce_normal = Geometry.positionDelta bounce_player_position
+                                                   bounce_asteroid_position
+
+            old_asteroid_position = AsteroidState.getPosition asteroid
+            old_asteroid_direction = AsteroidState.getDirection asteroid
+            asteroid_radius = AsteroidState.getRadius asteroid
+
+    -- If there was a collision with an asteroid, bounce from the asteroid.
+    -- TODO(ondrasej): Consider a computation where the player may collide with
+    -- more than one asteroid at a time.
+    asteroid_collision <- GameState.asteroidCollision
+    let (new_position, new_direction) = case asteroid_collision of
+            Nothing       -> (raw_new_position, raw_new_direction)
+            Just asteroid -> bounceFromAsteroid asteroid
+
     GameState.updatePlayer$ old_state
         { getPosition = Geometry.boundedPosition Geometry.bounceRotation
                                                  new_position
@@ -161,9 +222,7 @@ update = do
                     Geometry.getRotation old_position + angle + deviation
                 particle_direction_base =
                     Geometry.directionRadial particle_angle speed 0.0
-                particle_direction =
-                    Geometry.addDirection particle_direction_base
-                                          old_direction
+                particle_direction = particle_direction_base +. old_direction
                 lifespan = Time.durationSeconds lifespan_seconds
                 particle_end_time = Time.add current_time lifespan
                 color = GLUtils.color3D brightness brightness brightness
@@ -200,7 +259,6 @@ updatePosition duration inputs old_position old_direction =
         _ -> 0.0
     left = Inputs.turnLeftPressed inputs
     right = Inputs.turnRightPressed inputs
-
 
 -- | Updates the direction of the player based on the inputs.
 -- TODO(ondrasej): Slow the player down when they are shooting.
