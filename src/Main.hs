@@ -22,4 +22,4 @@ main = do
   where
     app_settings = ApplicationSettings { windowWidth = 800
                                        , windowHeight = 600
-                                       , windowTitle = "HBodies" }
+                                       , windowTitle = "Heavenly Bodies" }
