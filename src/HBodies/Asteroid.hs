@@ -58,6 +58,7 @@ newRandom :: (Double, Double)
           -- ^ The new asteroid.
 newRandom x_range y_range radius_range dx_range dy_range drotation_range
           num_vertices_range health_range = do
+    id <- GameState.newAsteroidId
     x <- GameState.randomR x_range
     y <- GameState.randomR y_range
     dx <- GameState.randomR dx_range
@@ -73,7 +74,8 @@ newRandom x_range y_range radius_range dx_range dy_range drotation_range
             y = radius * (sin angle)
         return$ GLUtils.vertex2D x y
     return$ State
-        { getPosition = Geometry.position x y 0.0
+        { getId = id
+        , getPosition = Geometry.position x y 0.0
         , getDirection = Geometry.direction dx dy dr
         , getVertices = vertices
         , getHealth = health

@@ -15,7 +15,11 @@
 -- | Contains definitions of data types for the state of an asteroid.
 module HBodies.Asteroid.State
     (
-      State(..)
+      Id
+    , State(..)
+
+    , firstId
+    , nextId
 
     , isCollision
     , collisionSphere
@@ -26,11 +30,16 @@ import qualified HBodies.Geometry as Geometry
 import qualified HBodies.Time as Time
 import qualified System.Random as Random
 
+-- | The identifier of an asteroid in the game. The IDs can be used to quickly
+-- look up the asteroids, and to refer to them from the rest of the code.
+data Id = AsteroidId !Int deriving (Eq, Ord, Read, Show)
+
 -- | The state of an asteroid.
 data State = State
-    {
+    { -- | The identifier of the asteroid.
+      getId :: !Id
       -- | The current position of the asteroid.
-      getPosition :: !Geometry.Position
+    , getPosition :: !Geometry.Position
       -- | The current direction of the asteroid.
     , getDirection :: !Geometry.Direction
       -- | The shape of the asteroid. It can be rendered as a line loop along
@@ -48,6 +57,14 @@ data State = State
 -- | Returns a collision sphere for the asteroid.
 collisionSphere :: State -> (Geometry.Position, Double)
 collisionSphere asteroid = (getPosition asteroid, getRadius asteroid)
+
+-- | Returns the first ID of an asteroid that can be used in a game.
+firstId :: Id
+firstId = AsteroidId 0
+
+-- | Given the ID of an asteroid, returns the ID of the following asteroid.
+nextId :: Id -> Id
+nextId (AsteroidId i) = AsteroidId$ i + 1
 
 -- | Detects collision of a sphere with an asteroid.
 isCollision :: (Geometry.Position, Double)

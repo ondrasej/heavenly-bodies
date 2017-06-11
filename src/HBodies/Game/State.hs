@@ -29,6 +29,8 @@ import qualified System.Random as Random
 data State = GameState
     { -- | The list of asteroids in the game.
       getAsteroids :: [AsteroidState.State]
+      -- | The ID of the next asteroid created in the game.
+    , getStateNextAsteroidId :: !AsteroidState.Id
       -- | The time of the last update (of in-game time).
     , getLastUpdate :: !Time.Time
       -- | The state of the particles in the game.
@@ -58,6 +60,8 @@ data UpdateData = UpdateData
       -- list is reversed before it is used in the State structure of the next
       -- frame to make the order of the asteroids in the list stable.
     , getUpdatedAsteroids :: ![AsteroidState.State]
+      -- | The ID of the next asteroid created in the game.
+    , getUpdateNextAsteroidId :: !AsteroidState.Id
       -- | The updated player data.
     , getUpdatedPlayer :: !PlayerState.State
       -- | The state of the particles in the following frame. Note that the
@@ -137,6 +141,14 @@ lastFrameTime = do
     d <- MonadState.get
     return$ getLastUpdate$ getCurrentState d
 
+-- | Returns a new asteroid ID.
+newAsteroidId :: Update AsteroidState.Id
+newAsteroidId = do
+    d <- MonadState.get
+    let id = getUpdateNextAsteroidId d
+    MonadState.put$ d { getUpdateNextAsteroidId = AsteroidState.nextId id }
+    return id
+
 -- | Returns the state of the player in the previous frame.
 player :: Update PlayerState.State
 player = do
@@ -205,6 +217,7 @@ runUpdate duration inputs old_state code = update
         , getPlayerDamage = 0.0
         , getAsteroidCollision = Nothing
         , getUpdatedAsteroids = []
+        , getUpdateNextAsteroidId = getStateNextAsteroidId old_state
         , getUpdatedParticles = []
         , getUpdatedPlayer = getPlayer old_state
         , getUpdateRandomGenerator = getRandomGenerator old_state }
