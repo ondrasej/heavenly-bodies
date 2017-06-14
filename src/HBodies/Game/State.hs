@@ -18,6 +18,7 @@ module HBodies.Game.State where
 
 import Control.Applicative ((<$>))
 import qualified Control.Monad.State as MonadState
+import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid.State as AsteroidState
 import qualified HBodies.Inputs as Inputs
 import qualified HBodies.Particle.State as ParticleState
@@ -25,10 +26,13 @@ import qualified HBodies.Player.State as PlayerState
 import qualified HBodies.Time as Time
 import qualified System.Random as Random
 
+-- | The list of asteroids indexed by their IDs.
+type IndexedAsteroids = Map.Map AsteroidState.Id AsteroidState.State
+
 -- | The state of the game.
 data State = GameState
     { -- | The list of asteroids in the game.
-      getAsteroids :: [AsteroidState.State]
+      getAsteroids :: !IndexedAsteroids
       -- | The ID of the next asteroid created in the game.
     , getStateNextAsteroidId :: !AsteroidState.Id
       -- | The time of the last update (of in-game time).
@@ -59,7 +63,7 @@ data UpdateData = UpdateData
       -- | The states of the asteroids in the following frame. Note that the
       -- list is reversed before it is used in the State structure of the next
       -- frame to make the order of the asteroids in the list stable.
-    , getUpdatedAsteroids :: ![AsteroidState.State]
+    , getUpdatedAsteroids :: !IndexedAsteroids
       -- | The ID of the next asteroid created in the game.
     , getUpdateNextAsteroidId :: !AsteroidState.Id
       -- | The updated player data.
@@ -93,7 +97,9 @@ addUpdatedAsteroid :: AsteroidState.State
 addUpdatedAsteroid asteroid = do
     d <- MonadState.get
     let asteroids = getUpdatedAsteroids d
-    MonadState.put$ d { getUpdatedAsteroids = asteroid:asteroids }
+        asteroid_id = AsteroidState.getId asteroid
+        new_map = Map.insert asteroid_id asteroid asteroids
+    MonadState.put$ d { getUpdatedAsteroids = new_map }
 
 -- | Adds an updated particle to the state updates.
 addUpdatedParticle :: ParticleState.State
@@ -105,11 +111,20 @@ addUpdatedParticle particle = do
     MonadState.put$ d { getUpdatedParticles = particle:particles }
 
 -- | Returns the list of asteroids from the previous frame.
-asteroids :: Update [AsteroidState.State]
+asteroids :: Update IndexedAsteroids
 asteroids = do
     d <- MonadState.get
     return$ getAsteroids$ getCurrentState d
 
+-- | Returns the asteroid with the given ID, or Nothing if no such asteroid was
+-- found.
+asteroidById :: AsteroidState.Id -> Update (Maybe AsteroidState.State)
+asteroidById asteroid_id = do
+    asteroid_list <- asteroids
+    return$ Map.lookup asteroid_id asteroid_list
+
+-- | Returns the asteroid that collided with the player, or Nothing if there was
+-- no collision or the collision was not detected yet.
 asteroidCollision :: Update (Maybe AsteroidState.State)
 asteroidCollision = do
     d <- MonadState.get
@@ -187,6 +202,14 @@ setAsteroidCollision asteroid = do
     return$ getAsteroidCollision d
     MonadState.put$ d { getAsteroidCollision = Just asteroid }
 
+-- | Returns the updated data of the asteroid with the given ID. Returns Nothing
+-- if no such asteroid exists or if the asteroid was not updated yet.
+updatedAsteroidById :: AsteroidState.Id -> Update (Maybe AsteroidState.State)
+updatedAsteroidById asteroid_id = do
+    d <- MonadState.get
+    let updated_asteroids = getUpdatedAsteroids d
+    return$ Map.lookup asteroid_id updated_asteroids
+
 -- | Modifies the player state in the update.
 updatePlayer :: PlayerState.State
              -- ^ The new state of the player.
@@ -216,7 +239,7 @@ runUpdate duration inputs old_state code = update
         , getInputState = inputs
         , getPlayerDamage = 0.0
         , getAsteroidCollision = Nothing
-        , getUpdatedAsteroids = []
+        , getUpdatedAsteroids = Map.empty
         , getUpdateNextAsteroidId = getStateNextAsteroidId old_state
         , getUpdatedParticles = []
         , getUpdatedPlayer = getPlayer old_state

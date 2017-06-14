@@ -27,6 +27,7 @@ module HBodies.Game
     ) where
 
 import Control.Monad (forM_)
+import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid as Asteroid
 import qualified HBodies.Asteroid.State as AsteroidState
 import qualified HBodies.Game.Params as Params
@@ -44,7 +45,7 @@ empty :: State
 empty = GameState
     { getLastUpdate = Time.startTime
     , getPlayer = Player.new
-    , getAsteroids = []
+    , getAsteroids = Map.empty
     , getStateNextAsteroidId = AsteroidState.firstId
     , getParticles = []
     , getRandomGenerator = Random.mkStdGen Params.random_seed }
@@ -92,7 +93,7 @@ update :: Time.Duration
 update duration inputs old_state = new_state
   where
     new_state = GameState
-        { getAsteroids = reverse$ getUpdatedAsteroids update_data
+        { getAsteroids = getUpdatedAsteroids update_data
         , getStateNextAsteroidId = getUpdateNextAsteroidId update_data
         , getLastUpdate = Time.add (getLastUpdate old_state) duration
         , getParticles = reverse$ getUpdatedParticles update_data

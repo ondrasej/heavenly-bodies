@@ -22,6 +22,7 @@ cabal-version:        >=1.8
 executable heavenly-bodies
   main-is:              Main.hs
   build-depends:        base,
+                        containers,
                         linear,
                         mtl,
                         OpenGL,
