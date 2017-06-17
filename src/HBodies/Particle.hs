@@ -26,8 +26,9 @@ module HBodies.Particle
     , render
     ) where
 
-import Control.Monad (forM_, unless)
-import qualified Data.List as List
+import Control.Monad (unless)
+import qualified Data.Foldable as Foldable
+import Data.Foldable (forM_)
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import qualified HBodies.Asteroid.State as AsteroidState
 import qualified HBodies.Game.State as GameState
@@ -92,7 +93,7 @@ update particle = do
     asteroids <- GameState.asteroids
     let expired = current_time > getEndTime particle
         sphere = (getPosition particle, getRadius particle)
-        collision = List.any (AsteroidState.isCollision sphere) asteroids
+        collision = Foldable.any (AsteroidState.isCollision sphere) asteroids
     unless (expired || collision) $do
         let position = getPosition particle
             direction = getDirection particle

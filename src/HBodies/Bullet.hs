@@ -26,7 +26,7 @@ module HBodies.Bullet
     ) where
 
 import Control.Monad (unless)
-import qualified Data.List as List
+import qualified Data.Foldable as Foldable
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import HBodies.Bullet.State
 import qualified HBodies.Asteroid.State as AsteroidState
@@ -79,7 +79,7 @@ update bullet = do
     asteroids <- GameState.asteroids
     let expired = current_time > getEndTime bullet
         sphere = (getPosition bullet, Params.bullet_radius)
-        collision = List.find (AsteroidState.isCollision sphere) asteroids
+        collision = Foldable.find (AsteroidState.isCollision sphere) asteroids
     case collision of
         Just asteroid -> do
             -- TODO(ondrasej): Add damage to the asteroid.

@@ -26,7 +26,7 @@ module HBodies.Game
     , update
     ) where
 
-import Control.Monad (forM_)
+import Data.Foldable (forM_)
 import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid as Asteroid
 import qualified HBodies.Asteroid.State as AsteroidState
