@@ -74,12 +74,9 @@ render :: State
        -- ^ The state of the world.
        -> IO ()
 render state = do
-    let asteroids = getAsteroids state
-        particles = getParticles state
-        player = getPlayer state
-    forM_ particles Particle.render
-    forM_ asteroids Asteroid.render
-    Player.render player
+    forM_ (getParticles state) Particle.render
+    forM_ (getAsteroids state) Asteroid.render
+    Player.render (getPlayer state)
 
 -- | Updates the state of the game by the given amount of time.
 update :: Time.Duration
