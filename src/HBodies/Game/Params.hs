@@ -42,6 +42,7 @@ asteroid_radius_range = (20.0, 30.0)
 asteroid_vertices_range = (6, 20) :: (Int, Int)
 asteroid_health_range = (80.0, 100.0)
 
+bullet_damage = 10.0
 bullet_lifespan = Time.durationSeconds 1.0
 bullet_period = Time.durationSeconds 0.1
 bullet_speed = 130.0

@@ -82,8 +82,8 @@ update bullet = do
         collision = Foldable.find (AsteroidState.isCollision sphere) asteroids
     case collision of
         Just asteroid -> do
-            -- TODO(ondrasej): Add damage to the asteroid.
-            return ()
+            GameState.addAsteroidDamage (AsteroidState.getId asteroid)
+                                        Params.bullet_damage
         Nothing -> unless expired $do
             let position = getPosition bullet
                 direction = getDirection bullet

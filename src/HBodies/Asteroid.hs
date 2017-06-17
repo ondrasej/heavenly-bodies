@@ -101,9 +101,11 @@ update asteroid = do
     player <- GameState.player
     duration <- GameState.duration
     let sphere = collisionSphere asteroid
+        asteroid_id = getId asteroid
     when (PlayerState.isCollision sphere player) $do
         GameState.addPlayerDamage 10.0
         GameState.setAsteroidCollision asteroid
+    damage <- GameState.asteroidDamageById asteroid_id
     let old_position = getPosition asteroid
         old_direction = getDirection asteroid
         raw_position =
@@ -111,5 +113,9 @@ update asteroid = do
         new_position =
             Geometry.boundedPosition (Geometry.keepRotation) raw_position 
         new_direction = Geometry.boundedDirection raw_position old_direction
-    GameState.addUpdatedAsteroid$ asteroid { getPosition = new_position
-                                           , getDirection = new_direction }
+        old_health = getHealth asteroid
+        new_health = old_health - damage
+    when (new_health > 0.0) $do
+        GameState.addUpdatedAsteroid$ asteroid { getPosition = new_position
+                                               , getDirection = new_direction
+                                               , getHealth = new_health }

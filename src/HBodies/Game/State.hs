@@ -65,6 +65,8 @@ data UpdateData = UpdateData
       -- if there was no collision; contains the last asteroid if the player
       -- collided with more than one in the same frame.
     , getAsteroidCollision :: Maybe AsteroidState.State
+      -- | The damage inflicted to the asteroids during this frame.
+    , getAsteroidDamage :: Map.Map AsteroidState.Id Double
       -- | The states of the asteroids in the following frame.
     , getUpdatedAsteroids :: !IndexedAsteroids
       -- | The states of the bullets in the following frame. Note that the list
@@ -96,6 +98,19 @@ addNewBullet bullet = do
     let bullets = getUpdatedBullets d
     MonadState.put$ d { getUpdatedBullets = bullet:bullets
                       , getBulletFired = True }
+
+-- | Records damage inflicted to the given asteroid in this frame.
+addAsteroidDamage :: AsteroidState.Id
+                  -- ^ The ID of the asteroid receiving the damage.
+                  -> Double
+                  -- ^ The damage added to the asteroid.
+                  -> Update ()
+addAsteroidDamage asteroid_id damage = do
+    d <- MonadState.get
+    let damages = getAsteroidDamage d
+        new_damage = damage + Map.findWithDefault 0.0 asteroid_id damages
+        new_damages = Map.insert asteroid_id new_damage damages
+    MonadState.put$ d { getAsteroidDamage = new_damages }
 
 -- | Adds player damage in the current frame.
 addPlayerDamage :: Double
@@ -154,6 +169,14 @@ asteroidCollision :: Update (Maybe AsteroidState.State)
 asteroidCollision = do
     d <- MonadState.get
     return$ getAsteroidCollision d
+
+-- | Returns the damage inflicted to the given asteroid in the current frame.
+-- Returns 0.0 if there was no damage to the asteroid or there is no such
+-- asteroid.
+asteroidDamageById :: AsteroidState.Id -> Update Double
+asteroidDamageById asteroid_id = do
+    d <- MonadState.get
+    return$ Map.findWithDefault 0.0 asteroid_id (getAsteroidDamage d)
 
 -- | Returns the "previous" state in the update monad.
 currentState :: Update State
@@ -270,6 +293,7 @@ runUpdate duration inputs old_state code = update
         , getInputState = inputs
         , getPlayerDamage = 0.0
         , getAsteroidCollision = Nothing
+        , getAsteroidDamage = Map.empty
         , getUpdatedAsteroids = Map.empty
         , getUpdateNextAsteroidId = getStateNextAsteroidId old_state
         , getUpdatedBullets = []
