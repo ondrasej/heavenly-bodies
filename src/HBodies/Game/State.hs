@@ -60,9 +60,7 @@ data UpdateData = UpdateData
       -- if there was no collision; contains the last asteroid if the player
       -- collided with more than one in the same frame.
     , getAsteroidCollision :: Maybe AsteroidState.State
-      -- | The states of the asteroids in the following frame. Note that the
-      -- list is reversed before it is used in the State structure of the next
-      -- frame to make the order of the asteroids in the list stable.
+      -- | The states of the asteroids in the following frame.
     , getUpdatedAsteroids :: !IndexedAsteroids
       -- | The ID of the next asteroid created in the game.
     , getUpdateNextAsteroidId :: !AsteroidState.Id
