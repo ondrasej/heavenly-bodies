@@ -30,6 +30,7 @@ import Control.Monad (forM_)
 import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid as Asteroid
 import qualified HBodies.Asteroid.State as AsteroidState
+import qualified HBodies.Bullet as Bullet
 import qualified HBodies.Game.Params as Params
 import HBodies.Game.State
 import qualified HBodies.GLUtils as GLUtils
@@ -46,6 +47,8 @@ empty = GameState
     { getLastUpdate = Time.startTime
     , getPlayer = Player.new
     , getAsteroids = Map.empty
+    , getLastBulletTime = Time.infinitePast
+    , getBullets = []
     , getStateNextAsteroidId = AsteroidState.firstId
     , getParticles = []
     , getRandomGenerator = Random.mkStdGen Params.random_seed }
@@ -75,6 +78,7 @@ render :: State
        -> IO ()
 render state = do
     forM_ (getParticles state) Particle.render
+    forM_ (getBullets state) Bullet.render
     forM_ (getAsteroids state) Asteroid.render
     Player.render (getPlayer state)
 
@@ -92,11 +96,18 @@ update duration inputs old_state = new_state
     new_state = GameState
         { getAsteroids = getUpdatedAsteroids update_data
         , getStateNextAsteroidId = getUpdateNextAsteroidId update_data
-        , getLastUpdate = Time.add (getLastUpdate old_state) duration
+        , getBullets = reverse$ getUpdatedBullets update_data
+        , getLastBulletTime = last_bullet_time
+        , getLastUpdate = new_frame_time
         , getParticles = reverse$ getUpdatedParticles update_data
         , getPlayer = getUpdatedPlayer update_data
         , getRandomGenerator = getUpdateRandomGenerator update_data }
     update_data = runUpdate duration inputs old_state $do
+        forM_ (getBullets old_state) Bullet.update
         forM_ (getAsteroids old_state) Asteroid.update
         forM_ (getParticles old_state) Particle.update
         Player.update
+    new_frame_time = Time.add (getLastUpdate old_state) duration
+    last_bullet_time = if getBulletFired update_data
+                           then new_frame_time
+                           else getLastBulletTime old_state

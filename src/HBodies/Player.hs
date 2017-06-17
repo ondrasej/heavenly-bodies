@@ -33,6 +33,7 @@ import qualified Data.Maybe as Maybe
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=))
 import qualified HBodies.Asteroid.State as AsteroidState
+import qualified HBodies.Bullet as Bullet
 import qualified HBodies.Game.Params as Params
 import qualified HBodies.Game.State as GameState
 import qualified HBodies.Geometry as Geometry
@@ -206,6 +207,16 @@ update = do
         , getHealth = new_health
         , getInvincibilityEnd = new_invincible_time
         , getLastShot = getLastShot old_state }
+
+    -- Add bullets if the player pressed the 'fire' button.
+    -- TODO(ondrasej): Accelerate backwards a little bit when a bullet was
+    -- fired.
+    last_bullet_time <- GameState.lastBulletTime
+    let next_bullet_time = Time.add last_bullet_time Params.bullet_period
+        can_fire = current_frame_time >= next_bullet_time
+    when (can_fire && Inputs.firePressed inputs) $do  
+        let bullet = Bullet.new old_state current_frame_time
+        GameState.addNewBullet bullet
 
     -- Add particles if the player accelerates or decelerates.
     let addParticleIfKeyPressed key_pressed angle = do

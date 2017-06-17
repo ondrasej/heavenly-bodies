@@ -20,6 +20,7 @@ import Control.Applicative ((<$>))
 import qualified Control.Monad.State as MonadState
 import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid.State as AsteroidState
+import qualified HBodies.Bullet.State as BulletState
 import qualified HBodies.Inputs as Inputs
 import qualified HBodies.Particle.State as ParticleState
 import qualified HBodies.Player.State as PlayerState
@@ -33,6 +34,10 @@ type IndexedAsteroids = Map.Map AsteroidState.Id AsteroidState.State
 data State = GameState
     { -- | The list of asteroids in the game.
       getAsteroids :: !IndexedAsteroids
+      -- | The list of bullets in the game.
+    , getBullets :: ![BulletState.State]
+      -- | The time when the last bullet was fired.
+    , getLastBulletTime :: !Time.Time
       -- | The ID of the next asteroid created in the game.
     , getStateNextAsteroidId :: !AsteroidState.Id
       -- | The time of the last update (of in-game time).
@@ -62,6 +67,12 @@ data UpdateData = UpdateData
     , getAsteroidCollision :: Maybe AsteroidState.State
       -- | The states of the asteroids in the following frame.
     , getUpdatedAsteroids :: !IndexedAsteroids
+      -- | The states of the bullets in the following frame. Note that the list
+      -- is reversed before it is used in the State structure of the next frame
+      -- to make the order of the bullets in the list stable.
+    , getUpdatedBullets :: ![BulletState.State]
+      -- | Whether a bullet was fired this round.
+    , getBulletFired :: Bool
       -- | The ID of the next asteroid created in the game.
     , getUpdateNextAsteroidId :: !AsteroidState.Id
       -- | The updated player data.
@@ -78,6 +89,13 @@ data UpdateData = UpdateData
 
 -- | The monad, in which all state updates are executed.
 type Update = MonadState.State UpdateData
+
+addNewBullet :: BulletState.State -> Update ()
+addNewBullet bullet = do
+    d <- MonadState.get
+    let bullets = getUpdatedBullets d
+    MonadState.put$ d { getUpdatedBullets = bullet:bullets
+                      , getBulletFired = True }
 
 -- | Adds player damage in the current frame.
 addPlayerDamage :: Double
@@ -98,6 +116,15 @@ addUpdatedAsteroid asteroid = do
         asteroid_id = AsteroidState.getId asteroid
         new_map = Map.insert asteroid_id asteroid asteroids
     MonadState.put$ d { getUpdatedAsteroids = new_map }
+
+-- | Adds an updated bullet to state updates.
+addUpdatedBullet :: BulletState.State 
+                 -- ^ The updated bullet object.
+                 -> Update ()
+addUpdatedBullet bullet = do
+    d <- MonadState.get
+    let bullets = getUpdatedBullets d
+    MonadState.put$ d { getUpdatedBullets = bullet:bullets }
 
 -- | Adds an updated particle to the state updates.
 addUpdatedParticle :: ParticleState.State
@@ -147,6 +174,12 @@ currentFrameTime = do
     duration <- duration
     let lastFrame = getLastUpdate$ getCurrentState d
     return$ Time.add lastFrame duration
+
+-- | Returns the time when the last bullet was fired.
+lastBulletTime :: Update Time.Time
+lastBulletTime = do
+    d <- MonadState.get
+    return$ getLastBulletTime$ getCurrentState d 
 
 -- | Returns the timestamp of the last frame.
 lastFrameTime :: Update Time.Time
@@ -239,6 +272,8 @@ runUpdate duration inputs old_state code = update
         , getAsteroidCollision = Nothing
         , getUpdatedAsteroids = Map.empty
         , getUpdateNextAsteroidId = getStateNextAsteroidId old_state
+        , getUpdatedBullets = []
+        , getBulletFired = False
         , getUpdatedParticles = []
         , getUpdatedPlayer = getPlayer old_state
         , getUpdateRandomGenerator = getRandomGenerator old_state }
