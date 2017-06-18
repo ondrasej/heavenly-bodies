@@ -93,11 +93,9 @@ data UpdateData = UpdateData
 type Update = MonadState.State UpdateData
 
 addNewBullet :: BulletState.State -> Update ()
-addNewBullet bullet = do
-    d <- MonadState.get
-    let bullets = getUpdatedBullets d
-    MonadState.put$ d { getUpdatedBullets = bullet:bullets
-                      , getBulletFired = True }
+addNewBullet bullet = MonadState.modify'$ \d -> 
+    d { getUpdatedBullets = bullet:getUpdatedBullets d
+      , getBulletFired = True }
 
 -- | Records damage inflicted to the given asteroid in this frame.
 addAsteroidDamage :: AsteroidState.Id
@@ -105,172 +103,134 @@ addAsteroidDamage :: AsteroidState.Id
                   -> Double
                   -- ^ The damage added to the asteroid.
                   -> Update ()
-addAsteroidDamage asteroid_id damage = do
-    d <- MonadState.get
+addAsteroidDamage asteroid_id damage = MonadState.modify'$ \d -> 
     let damages = getAsteroidDamage d
         new_damage = damage + Map.findWithDefault 0.0 asteroid_id damages
         new_damages = Map.insert asteroid_id new_damage damages
-    MonadState.put$ d { getAsteroidDamage = new_damages }
+    in d { getAsteroidDamage = new_damages }
 
 -- | Adds player damage in the current frame.
 addPlayerDamage :: Double
                 -- ^ The damage added to the player.
                 -> Update ()
-addPlayerDamage damage = do
-    d <- MonadState.get
-    let new_damage = damage + getPlayerDamage d
-    MonadState.put$ d { getPlayerDamage = new_damage }
+addPlayerDamage damage = MonadState.modify'$ \d ->
+    d { getPlayerDamage = damage + getPlayerDamage d }
 
 -- | Adds an updated asteroid to the state updates.
 addUpdatedAsteroid :: AsteroidState.State
                    -- ^ The updated asteroid object.
                    -> Update ()
-addUpdatedAsteroid asteroid = do
-    d <- MonadState.get
+addUpdatedAsteroid asteroid = MonadState.modify'$ \d ->
     let asteroids = getUpdatedAsteroids d
         asteroid_id = AsteroidState.getId asteroid
-        new_map = Map.insert asteroid_id asteroid asteroids
-    MonadState.put$ d { getUpdatedAsteroids = new_map }
+    in d { getUpdatedAsteroids = Map.insert asteroid_id asteroid asteroids }
 
 -- | Adds an updated bullet to state updates.
 addUpdatedBullet :: BulletState.State 
                  -- ^ The updated bullet object.
                  -> Update ()
-addUpdatedBullet bullet = do
-    d <- MonadState.get
-    let bullets = getUpdatedBullets d
-    MonadState.put$ d { getUpdatedBullets = bullet:bullets }
+addUpdatedBullet bullet = MonadState.modify'$ \d ->
+    d { getUpdatedBullets = bullet:getUpdatedBullets d }
 
 -- | Adds an updated particle to the state updates.
 addUpdatedParticle :: ParticleState.State
                    -- ^ The updated particle object.
                    -> Update ()
-addUpdatedParticle particle = do
-    d <- MonadState.get
-    let particles = getUpdatedParticles d
-    MonadState.put$ d { getUpdatedParticles = particle:particles }
+addUpdatedParticle particle = MonadState.modify'$ \d ->
+    d { getUpdatedParticles = particle:getUpdatedParticles d }
 
 -- | Returns the list of asteroids from the previous frame.
 asteroids :: Update IndexedAsteroids
-asteroids = do
-    d <- MonadState.get
-    return$ getAsteroids$ getCurrentState d
+asteroids = MonadState.gets$ getAsteroids . getCurrentState
 
 -- | Returns the asteroid with the given ID, or Nothing if no such asteroid was
 -- found.
 asteroidById :: AsteroidState.Id -> Update (Maybe AsteroidState.State)
-asteroidById asteroid_id = do
-    asteroid_list <- asteroids
-    return$ Map.lookup asteroid_id asteroid_list
+asteroidById asteroid_id = Map.lookup asteroid_id <$> asteroids
 
 -- | Returns the asteroid that collided with the player, or Nothing if there was
 -- no collision or the collision was not detected yet.
 asteroidCollision :: Update (Maybe AsteroidState.State)
-asteroidCollision = do
-    d <- MonadState.get
-    return$ getAsteroidCollision d
+asteroidCollision = MonadState.gets$ getAsteroidCollision
 
 -- | Returns the damage inflicted to the given asteroid in the current frame.
 -- Returns 0.0 if there was no damage to the asteroid or there is no such
 -- asteroid.
 asteroidDamageById :: AsteroidState.Id -> Update Double
-asteroidDamageById asteroid_id = do
-    d <- MonadState.get
-    return$ Map.findWithDefault 0.0 asteroid_id (getAsteroidDamage d)
+asteroidDamageById asteroid_id =
+    MonadState.gets$ Map.findWithDefault 0.0 asteroid_id . getAsteroidDamage
 
 -- | Returns the "previous" state in the update monad.
 currentState :: Update State
-currentState = getCurrentState <$> MonadState.get
+currentState = MonadState.gets$ getCurrentState
 
 -- | Returns the in-game time passed since the last frame.
 duration :: Update Time.Duration
-duration = getDuration <$> MonadState.get
+duration = MonadState.gets$ getDuration
 
 -- | Returns the state of the inputs in the update.
 inputs :: Update Inputs.State
-inputs = getInputState <$> MonadState.get
+inputs = MonadState.gets$ getInputState
 
 -- | Returns the timestamp of the current frame.
 currentFrameTime :: Update Time.Time
-currentFrameTime = do
-    d <- MonadState.get
-    duration <- duration
-    let lastFrame = getLastUpdate$ getCurrentState d
-    return$ Time.add lastFrame duration
+currentFrameTime = Time.add <$> lastFrameTime <*> duration
 
 -- | Returns the time when the last bullet was fired.
 lastBulletTime :: Update Time.Time
-lastBulletTime = do
-    d <- MonadState.get
-    return$ getLastBulletTime$ getCurrentState d 
+lastBulletTime = MonadState.gets$ getLastBulletTime . getCurrentState
 
 -- | Returns the timestamp of the last frame.
 lastFrameTime :: Update Time.Time
-lastFrameTime = do
-    d <- MonadState.get
-    return$ getLastUpdate$ getCurrentState d
+lastFrameTime = MonadState.gets$ getLastUpdate . getCurrentState
 
 -- | Returns a new asteroid ID.
 newAsteroidId :: Update AsteroidState.Id
-newAsteroidId = do
-    d <- MonadState.get
+newAsteroidId = MonadState.state$ \d ->
     let id = getUpdateNextAsteroidId d
-    MonadState.put$ d { getUpdateNextAsteroidId = AsteroidState.nextId id }
-    return id
+    in (id, d { getUpdateNextAsteroidId = AsteroidState.nextId id })
 
 -- | Returns the state of the player in the previous frame.
 player :: Update PlayerState.State
-player = do
-    d <- MonadState.get
-    return$ getPlayer$ getCurrentState d
+player = MonadState.gets$ getPlayer . getCurrentState
 
 -- | Returns the playr damage accumulated so far in the current frame.
 playerDamage :: Update Double
-playerDamage = getPlayerDamage <$> MonadState.get
+playerDamage = MonadState.gets$ getPlayerDamage
 
 -- | Generates a random value using the random generator in the monad.
 random :: Random.Random a => Update a
-random = do
-    d <- MonadState.get
+random = MonadState.state$ \d ->
     let generator = getUpdateRandomGenerator d
         (v, generator') = Random.random generator
-    MonadState.put$ d { getUpdateRandomGenerator = generator' }
-    return v
+    in (v, d { getUpdateRandomGenerator = generator' })
 
 -- | Generates a random value from the given range using the random
 -- generator in the monad.
 randomR :: Random.Random a => (a, a) -> Update a
-randomR range = do
-    d <- MonadState.get
+randomR range = MonadState.state$ \d ->
     let generator = getUpdateRandomGenerator d
         (v, generator') = Random.randomR range generator
-    MonadState.put$ d { getUpdateRandomGenerator = generator' }
-    return v
+    in (v, d { getUpdateRandomGenerator = generator' })
 
 -- | Sets the asteroid the player collided with.
 setAsteroidCollision :: AsteroidState.State
                      -- ^ The asteroid the player collided with.
                      -> Update ()
-setAsteroidCollision asteroid = do
-    d <- MonadState.get
-    return$ getAsteroidCollision d
-    MonadState.put$ d { getAsteroidCollision = Just asteroid }
+setAsteroidCollision asteroid = MonadState.modify'$ \d ->
+    d { getAsteroidCollision = Just asteroid }
 
 -- | Returns the updated data of the asteroid with the given ID. Returns Nothing
 -- if no such asteroid exists or if the asteroid was not updated yet.
 updatedAsteroidById :: AsteroidState.Id -> Update (Maybe AsteroidState.State)
-updatedAsteroidById asteroid_id = do
-    d <- MonadState.get
-    let updated_asteroids = getUpdatedAsteroids d
-    return$ Map.lookup asteroid_id updated_asteroids
+updatedAsteroidById asteroid_id =
+    Map.lookup asteroid_id <$> MonadState.gets getUpdatedAsteroids
 
 -- | Modifies the player state in the update.
 updatePlayer :: PlayerState.State
              -- ^ The new state of the player.
              -> Update ()
-updatePlayer player = MonadState.modify doUpdate
-  where
-    doUpdate d = d { getUpdatedPlayer = player }
+updatePlayer player = MonadState.modify'$ \d -> d { getUpdatedPlayer = player }
 
 -- | Runs a game update action. Collects the updates produced by the action into
 -- an empty UpdateData structure.
@@ -284,10 +244,9 @@ runUpdate :: Time.Duration
           -- ^ The update action.
           -> UpdateData
           -- ^ The updates produced by the action.
-runUpdate duration inputs old_state code = update
+runUpdate duration inputs old_state code = MonadState.execState code empty
   where
-    (_, update) = MonadState.runState code empty_update
-    empty_update = UpdateData
+    empty = UpdateData
         { getCurrentState = old_state
         , getDuration = duration
         , getInputState = inputs
