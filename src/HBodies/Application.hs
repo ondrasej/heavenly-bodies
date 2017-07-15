@@ -56,11 +56,13 @@ data ApplicationSettings = ApplicationSettings
     }
 
 -- | Specifies the current state of the application.
-data ApplicationState = Active  -- ^ The application is active.
-                      | Paused  -- ^ The application is deactivated.
-                      | Quit    -- ^ The application is finishing, this is the
-                                --   last iteration of the application event
-                                --   loop.
+data ApplicationState = Active   -- ^ The application is active.
+                      | Paused   -- ^ The application is deactivated.
+                      | Restart  -- ^ The game should restart from the initial
+                                 --   state.
+                      | Quit     -- ^ The application is finishing, this is the
+                                 --   last iteration of the application event
+                                 --   loop.
                       deriving (Eq, Show)
 
 -- | Contains the application data.
@@ -130,6 +132,11 @@ pauseEventLoop :: Application
 pauseEventLoop application = do
     IORef.writeIORef (eventLoopState application) Paused
 
+-- | Restarts the game.
+restartGame :: Application -> IO ()
+restartGame application = do
+    IORef.writeIORef (eventLoopState application) Restart
+
 -- | Resumes the event loop of the application. The event loop will poll rather
 -- than wait for events, and it will update the game loop periodically.
 resumeEventLoop :: Application
@@ -193,6 +200,8 @@ runEventLoop application = do
                     quitEventLoop application
                 when (SDLUtils.isDeactivateEvent event) $do
                     pauseEventLoop application
+                when (SDLUtils.isRestartEvent event) $do
+                    restartGame application
                 when (SDLUtils.isActivateEvent event) $do
                     resumeEventLoop application
             Nothing -> return ()
@@ -218,10 +227,14 @@ runEventLoop application = do
                     render application
                 let last_update_time = Time.add current_time (-since_this_frame)
                 runEventLoop' application last_update_time
-            (Paused, Active) -> do
+            (_, Active) -> do
                 -- The application was just activated. We need to update time
                 -- first - there was a SDL.waitEvent in between last_update and
                 -- current_time and the time delta could have been very long.
+                runEventLoop' application current_time
+            (_, Restart) -> do
+                IORef.writeIORef (gameState application) Game.new
+                IORef.writeIORef (eventLoopState application) Active
                 runEventLoop' application current_time
             (_, Paused) -> do
                 render application

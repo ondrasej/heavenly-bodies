@@ -15,9 +15,11 @@
 module HBodies.SDLUtils
     (
       -- * Functions for inspecting SDL events.
-      isActivateEvent,
-      isDeactivateEvent,
-      isQuitEvent
+      isActivateEvent
+    , isDeactivateEvent
+    , isKeyRelease
+    , isQuitEvent
+    , isRestartEvent
     ) where
 
 import Control.Exception
@@ -27,18 +29,29 @@ import Foreign.C.Types
 
 import qualified SDL
 
+-- | Returns true if the provided event payload is a key release event for the
+-- given keycode. Otherwise, returns false.
+isKeyRelease :: SDL.Keycode -> SDL.EventPayload -> Bool
+isKeyRelease keycode (SDL.KeyboardEvent key_event) =
+    event_key_motion == SDL.Released && event_keycode == keycode
+  where
+    event_key_motion = SDL.keyboardEventKeyMotion key_event
+    keysym = SDL.keyboardEventKeysym key_event
+    event_keycode = SDL.keysymKeycode keysym
+isKeyRelease _ _ = False
+
 -- | Returns true if the provided event is an SDL quit event.
 isQuitEvent :: SDL.Event -> Bool
 isQuitEvent event = isQuitEventPayload (SDL.eventPayload event)
   where
     isQuitEventPayload SDL.QuitEvent = True
-    isQuitEventPayload (SDL.KeyboardEvent key_event) =
-        key_motion == SDL.Released && keycode == SDL.KeycodeEscape
-      where
-        key_motion = SDL.keyboardEventKeyMotion key_event
-        keysym = SDL.keyboardEventKeysym key_event
-        keycode = SDL.keysymKeycode keysym
+    isQuitEventPayload payload@(SDL.KeyboardEvent _) =
+        isKeyRelease SDL.KeycodeEscape payload
     isQuitEventPayload _ = False
+
+-- | Returns true if the provided
+isRestartEvent :: SDL.Event -> Bool
+isRestartEvent event = isKeyRelease SDL.KeycodeR (SDL.eventPayload event)
 
 -- | Returns true if the application was deactivated (lost focus).
 isDeactivateEvent :: SDL.Event -> Bool
