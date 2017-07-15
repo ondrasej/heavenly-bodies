@@ -36,6 +36,24 @@ import qualified HBodies.Player.State as PlayerState
 import qualified HBodies.Time as Time
 import qualified System.Random as Random
 
+-- | Generates a random shape for an asteroid with the given parameters.
+randomVertices :: (Int, Int)
+               -- ^ The range for the number of vertices of the asteroid.
+               -> (Double, Double)
+               -- ^ The range for the distance of a vertex from the center of
+               -- the asteroid.
+               -> GameState.Update [GL.Vertex2 GL.GLdouble]
+               -- ^ The vertices of the asteroid.
+randomVertices num_vertices_range radius_range = do
+    num_vertices <- GameState.randomR num_vertices_range
+    let angle_piece = Geometry.two_pi / (fromIntegral num_vertices)
+    forM [1..num_vertices] $ \i -> do
+        radius <- GameState.randomR radius_range
+        let angle = (fromIntegral i) * angle_piece
+            x = radius * (cos angle)
+            y = radius * (sin angle)
+        return$ GLUtils.vertex2D x y
+
 -- | Creates a new asteroid with random parameters. The function uses the random
 -- generator from the state update monad.
 newRandom :: (Double, Double)
@@ -64,15 +82,8 @@ newRandom x_range y_range radius_range dx_range dy_range drotation_range
     dx <- GameState.randomR dx_range
     dy <- GameState.randomR dy_range
     dr <- GameState.randomR drotation_range
-    num_vertices <- GameState.randomR num_vertices_range
     health <- GameState.randomR health_range
-    let angle_piece = Geometry.two_pi / (fromIntegral num_vertices)
-    vertices <- forM [1..num_vertices] $ \i -> do
-        radius <- GameState.randomR radius_range
-        let angle = (fromIntegral i) * angle_piece
-            x = radius * (cos angle)
-            y = radius * (sin angle)
-        return$ GLUtils.vertex2D x y
+    vertices <- randomVertices num_vertices_range radius_range
     return$ State
         { getId = id
         , getPosition = Geometry.position x y 0.0
