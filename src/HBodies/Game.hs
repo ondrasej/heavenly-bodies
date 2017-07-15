@@ -70,7 +70,9 @@ new = new_state
                                            Params.asteroid_vertices_range
                                            Params.asteroid_health_range
             addUpdatedAsteroid asteroid
-    new_state = empty { getAsteroids = getUpdatedAsteroids update_data }
+    new_state = empty
+        { getAsteroids = getUpdatedAsteroids update_data
+        , getStateNextAsteroidId = getUpdateNextAsteroidId update_data }
 
 -- | Renders the current state of the world.
 render :: State
