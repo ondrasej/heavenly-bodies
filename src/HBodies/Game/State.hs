@@ -16,7 +16,7 @@
 -- update monad, and basic functions for working inside this monad.
 module HBodies.Game.State where
 
-import Control.Applicative ((<$>))
+import Control.Applicative ((<*>), (<$>))
 import qualified Control.Monad.State as MonadState
 import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid.State as AsteroidState
