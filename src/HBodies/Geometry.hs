@@ -23,6 +23,7 @@ module HBodies.Geometry
     , direction
     , directionRadial
     , positionDelta
+    , addDirection
 
       -- * Arithmetic and other computation.
     , (+.), (-.), (*.)
@@ -198,6 +199,20 @@ positionDelta p1 p2 = Dir { getDx = dx, getDy = dy, getDRotation = drotation }
     dx = getX p2 - getX p1
     dy = getY p2 - getY p1
     drotation = normalizeRotation$ getRotation p2 - getRotation p1
+
+-- | Adds the given direction to the given position. This is an "inverse"
+-- operation to positionDelta.
+addDirection :: Position
+             -- ^ The original position.
+             -> Direction
+             -- ^ The direction.
+             -> Position
+             -- ^ The new position.
+addDirection pos dir = position x y rotation
+  where
+    x = getX pos + getDx dir
+    y = getY pos + getDy dir
+    rotation = normalizeRotation$ getRotation pos + getDRotation dir
 
 -- | Applies the given binary operation to the components of the direction.
 opDirection :: (Double -> Double -> Double)

@@ -128,6 +128,15 @@ main = hspec $do
       getDRotation d `shouldBe` (-0.5)
 
   describe "addDirection" $do
+    it "Adds direction to a position" $do
+      let p = position 1.0 2.0 3.0
+          d = direction (-2.0) 3.0 (-1.0)
+          p' = addDirection p d
+      getX p' `shouldBe` (-1.0)
+      getY p' `shouldBe` 5.0
+      getRotation p' `shouldBe` 2.0
+
+  describe "+." $do
     it "Adds directions" $do
       let d1 = direction 1.0 2.0 3.0
           d2 = direction 4.0 5.0 6.0
@@ -136,7 +145,7 @@ main = hspec $do
       getDy d `shouldBe` 7.0
       getDRotation d `shouldBe` 9.0
 
-  describe "diffDirection" $do
+  describe "-." $do
     it "Computes the difference" $do
       let d1 = direction 1.0 5.0 3.0
           d2 = direction (-2.0) 3.0 1.5
@@ -145,7 +154,7 @@ main = hspec $do
       getDy d `shouldBe` 2.0
       getDRotation d `shouldBe` 1.5
 
-  describe "multiplyDirection" $do
+  describe "*." $do
     it "Multiplies direction"$ do
       let d = direction 1.0 2.0 (1.5 * pi)
           md = 2.0 *. d
