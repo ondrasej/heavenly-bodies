@@ -12,5 +12,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+import Distribution.MacOSX
 import Distribution.Simple
-main = defaultMain
+
+main = defaultMainWithHooks $ simpleUserHooks {
+         postBuild = appBundleBuildHook [guiApp]
+       }
+
+guiApp :: MacApp
+guiApp = MacApp "heavenly-bodies"
+                Nothing
+                Nothing
+                []
+                []
+                ChaseWithDefaults

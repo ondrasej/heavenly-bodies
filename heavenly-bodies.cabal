@@ -16,7 +16,7 @@ author:               Ondrej Sykora
 maintainer:           mail@ondrejsykora.com
 copyright:            (c) 2017 Ondrej Sykora
 category:             Game
-build-type:           Simple
+build-type:           Custom
 cabal-version:        >=1.8
 
 executable heavenly-bodies
@@ -24,7 +24,7 @@ executable heavenly-bodies
   build-depends:        base,
                         containers,
                         linear,
-                        mtl,
+                        mtl >= 2.2.0,
                         OpenGL,
                         random,
                         sdl2 >= 2.0.0,
