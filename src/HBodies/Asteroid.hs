@@ -29,6 +29,7 @@ module HBodies.Asteroid
 import Control.Monad (forM, forM_, when)
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import HBodies.Asteroid.State
+import qualified HBodies.Game.Params as Params
 import qualified HBodies.Game.State as GameState
 import qualified HBodies.Geometry as Geometry
 import qualified HBodies.GLUtils as GLUtils
@@ -70,27 +71,25 @@ newRandom :: (Double, Double)
           -- ^ The range for the radius of the asteroid.
           -> (Int, Int)
           -- ^ The range for the number of vertices of the asteroid.
-          -> (Double, Double)
-          -- ^ The range for the health of the asteroid.
           -> GameState.Update State
           -- ^ The new asteroid.
 newRandom x_range y_range radius_range dx_range dy_range drotation_range
-          num_vertices_range health_range = do
+          num_vertices_range = do
     id <- GameState.newAsteroidId
     x <- GameState.randomR x_range
     y <- GameState.randomR y_range
     dx <- GameState.randomR dx_range
     dy <- GameState.randomR dy_range
     dr <- GameState.randomR drotation_range
-    health <- GameState.randomR health_range
     vertices <- randomVertices num_vertices_range radius_range
+    let radius = snd radius_range
     return$ State
         { getId = id
         , getPosition = Geometry.position x y 0.0
         , getDirection = Geometry.direction dx dy dr
         , getVertices = vertices
-        , getHealth = health
-        , getRadius = snd radius_range
+        , getHealth = radius * Params.asteroid_health_ratio
+        , getRadius = radius
         }
 
 -- | Renders the asteroid.

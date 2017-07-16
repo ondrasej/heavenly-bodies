@@ -40,7 +40,8 @@ asteroid_dy_range = (-5.0, 5.0)
 asteroid_drotation_range = (-0.2, 0.2)
 asteroid_radius_range = (20.0, 30.0)
 asteroid_vertices_range = (6, 20) :: (Int, Int)
-asteroid_health_range = (80.0, 100.0)
+-- | The ratio between the radius of an asteroid and its initial health.
+asteroid_health_ratio = 4.0
 
 bullet_damage = 10.0
 bullet_lifespan = Time.durationSeconds 1.0

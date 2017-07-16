@@ -68,7 +68,6 @@ new = new_state
                                            Params.asteroid_dy_range
                                            Params.asteroid_drotation_range
                                            Params.asteroid_vertices_range
-                                           Params.asteroid_health_range
             addUpdatedAsteroid asteroid
     new_state = empty
         { getAsteroids = getUpdatedAsteroids update_data
