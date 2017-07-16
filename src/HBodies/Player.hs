@@ -133,6 +133,16 @@ update = do
             then Time.add current_frame_time
                           Params.player_invincibility_duration
             else old_invincibility_end
+
+    -- Add bullets if the player pressed the 'fire' button.
+    last_bullet_time <- GameState.lastBulletTime
+    let next_bullet_time = Time.add last_bullet_time Params.bullet_period
+        can_fire = current_frame_time >= next_bullet_time
+    when (can_fire && Inputs.firePressed inputs) $do
+        let bullet = Bullet.new old_state current_frame_time
+        GameState.addNewBullet bullet
+    fired <- GameState.bulletFired
+
     -- Update the position of the player.
     let old_position = getPosition old_state
         old_direction = getDirection old_state
@@ -143,6 +153,7 @@ update = do
                                           old_direction
         raw_new_direction = updatePlayerDirection duration
                                                   inputs
+                                                  fired
                                                   old_position
                                                   old_direction
     -- Computes the position and the direction of the player after bouncing from
@@ -208,16 +219,6 @@ update = do
         , getInvincibilityEnd = new_invincible_time
         , getLastShot = getLastShot old_state }
 
-    -- Add bullets if the player pressed the 'fire' button.
-    -- TODO(ondrasej): Accelerate backwards a little bit when a bullet was
-    -- fired.
-    last_bullet_time <- GameState.lastBulletTime
-    let next_bullet_time = Time.add last_bullet_time Params.bullet_period
-        can_fire = current_frame_time >= next_bullet_time
-    when (can_fire && Inputs.firePressed inputs) $do  
-        let bullet = Bullet.new old_state current_frame_time
-        GameState.addNewBullet bullet
-
     -- Add particles if the player accelerates or decelerates.
     let addParticleIfKeyPressed key_pressed angle = do
         when (key_pressed inputs) $do
@@ -272,19 +273,21 @@ updatePosition duration inputs old_position old_direction =
     right = Inputs.turnRightPressed inputs
 
 -- | Updates the direction of the player based on the inputs.
--- TODO(ondrasej): Slow the player down when they are shooting.
 -- TODO(ondrasej): Slow the player down when they hit something.
 updatePlayerDirection :: Time.Duration
                       -- ^ The duration since the last frame.
                       -> Inputs.State
                       -- ^ The inputs.
+                      -> Bool
+                      -- ^ True if the player fired in this frame.
                       -> Geometry.Position
                       -- ^ The previous position of the player.
                       -> Geometry.Direction
                       -- ^ The direction of the player in the previous frame.
                       -> Geometry.Direction
                       -- ^ The new direction.
-updatePlayerDirection duration inputs old_position old_direction = new_direction
+updatePlayerDirection duration inputs fired old_position old_direction =
+    new_direction
   where
     new_direction = Geometry.direction new_dx new_dy 0.0
     new_dx = Params.slowdown_factor * Geometry.getDx old_direction +
@@ -293,10 +296,14 @@ updatePlayerDirection duration inputs old_position old_direction = new_direction
              Params.acceleration * direction_multiplier * sin rotation
     rotation = Geometry.getRotation old_position
 
-    direction_multiplier = case (accelerate, decelerate) of
-        (True, False) -> 1.0
-        (False, True) -> -1.0
-        _ -> 0.0
+    direction_multiplier = engine_multiplier + bullet_multiplier
+    engine_multiplier = case (accelerate, decelerate) of
+        (True, False) -> Params.player_accelerate_rate
+        (False, True) -> Params.player_decelerate_rate
+        _             -> 0.0
+    bullet_multiplier = case fired of
+        True  -> -Params.bullet_mass * Params.bullet_speed / Params.player_mass
+        False -> 0.0
 
     accelerate = Inputs.acceleratePressed inputs
     decelerate = Inputs.deceleratePressed inputs

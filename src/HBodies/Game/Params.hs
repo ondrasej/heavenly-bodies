@@ -60,8 +60,11 @@ bullet_mass = 1.0
 
 -- | The maximal health of the player.
 player_max_health = 100.0
+player_mass = 50.0
 player_radius = 4.0
 player_invincibility_duration = Time.durationSeconds 0.5
+player_accelerate_rate = 1.0
+player_decelerate_rate = -1.0
 
 -- Parameters of the particles emitted by the engine of the player.
 engine_particle_brightness_range = (0.2, 0.4)

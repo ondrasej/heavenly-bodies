@@ -440,6 +440,7 @@ boundedDirection pos old_direction =
         (InBound, InBound) -> (old_dx, old_dy)
         (InBound, _)       -> (old_dx, -old_dy)
         (_, InBound)       -> (-old_dx, old_dy)
+        (_, _)             -> (-old_dx, -old_dy)
     new_drotation = getDRotation old_direction
     old_dx = getDx old_direction
     old_dy = getDy old_direction

@@ -63,6 +63,8 @@ data UpdateData = UpdateData
     , getInputState :: !Inputs.State
       -- | The accumulated damage to the player.
     , getPlayerDamage :: !Double
+      -- | The impulses of force applied to the player in this frame.
+    , getPlayerImpulse :: Geometry.Direction
       -- | The asteroid the player collided with in this frame. Contains None
       -- if there was no collision; contains the last asteroid if the player
       -- collided with more than one in the same frame.
@@ -189,6 +191,10 @@ asteroidImpulseById asteroid_id =
     findImpulseOrDefault = Map.findWithDefault Geometry.zeroDirection
                                                asteroid_id
 
+-- | Returns true if the player fired a bullet in this frame.
+bulletFired :: Update Bool
+bulletFired = MonadState.gets$ getBulletFired
+
 -- | Returns the "previous" state in the update monad.
 currentState :: Update State
 currentState = MonadState.gets$ getCurrentState
@@ -280,6 +286,7 @@ runUpdate duration inputs old_state code = MonadState.execState code empty
         , getDuration = duration
         , getInputState = inputs
         , getPlayerDamage = 0.0
+        , getPlayerImpulse = Geometry.zeroDirection
         , getAsteroidCollision = Nothing
         , getAsteroidDamage = Map.empty
         , getAsteroidImpulses = Map.empty
