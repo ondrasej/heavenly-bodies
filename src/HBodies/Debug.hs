@@ -17,9 +17,11 @@ module HBodies.Debug
     (
       -- * Tracing utilities.
       traceShowTag
+    , traceShowTagM
     ) where
 
-import Debug.Trace as Trace
+import qualified Control.Monad as Monad
+import qualified Debug.Trace as Trace
 
 -- | An alternative for traceShow that displays the given value with the given
 -- label. This is equivalent to trace (tag ++ ": " ++ show value) value.
@@ -31,3 +33,13 @@ traceShowTag :: Show a
              -> a
              -- ^ The value is returned unchanged.
 traceShowTag tag value = Trace.trace (tag ++ ": " ++ show value) value
+
+-- | A version of traceShowTag that is a monadic action.
+traceShowTagM :: (Monad m, Show a)
+              => String
+              -- ^ The label displayed in front of the value.
+              -> a
+              -- ^ The displayed value.
+              -> m ()
+traceShowTagM tag value = do
+    Trace.traceM (tag ++ ": " ++ show value)
