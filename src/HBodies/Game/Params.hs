@@ -37,11 +37,18 @@ asteroid_x_range = (screen_left, screen_right)
 asteroid_y_range = (screen_bottom, screen_top)
 asteroid_dx_range = (-5.0, 5.0)
 asteroid_dy_range = (-5.0, 5.0)
-asteroid_drotation_range = (-0.2, 0.2)
+asteroid_drotation_range = (-0.3, 0.3)
 asteroid_radius_range = (20.0, 30.0)
 asteroid_vertices_range = (6, 20) :: (Int, Int)
 -- | The ratio between the radius of an asteroid and its initial health.
 asteroid_health_ratio = 4.0
+asteroid_min_radius = 3.0
+asteroid_num_shards = 3 :: Int
+
+-- | The minimal and the maximal ratio for the size of the asteroid shards.
+shard_radius_ratio_range = (0.3, 0.6)
+shard_velocity_range = (5.0, 20.0)
+shard_angle_noise_range = (-0.5, 0.5)
 
 bullet_damage = 10.0
 bullet_lifespan = Time.durationSeconds 1.0
