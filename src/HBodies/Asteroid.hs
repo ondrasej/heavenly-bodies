@@ -107,12 +107,15 @@ update :: State
        -- ^ The original state of the asteroid.
        -> GameState.Update ()
 update asteroid = do
-    -- TODO(ondrasej): Move the asteroid + detect collisions with the player.
+    -- TODO(ondrasej): Add a force impulse to the asteroid when it collides with
+    -- the player.
     player <- GameState.player
     duration <- GameState.duration
     let sphere = collisionSphere asteroid
         asteroid_id = getId asteroid
     when (PlayerState.isCollision sphere player) $do
+        -- TODO(ondrasej): The damage should depend on the mass of the asteroid
+        -- and the relative velocity of the player and the asteroid.
         GameState.addPlayerDamage 10.0
         GameState.setAsteroidCollision asteroid
     damage <- GameState.asteroidDamageById asteroid_id
