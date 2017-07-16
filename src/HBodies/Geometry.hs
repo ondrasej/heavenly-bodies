@@ -34,6 +34,7 @@ module HBodies.Geometry
     , normalizeRotation
     , updatePosition
 
+    , zeroDirection
     , unitDirection
     , directionNorm
     , dotProduct
@@ -279,6 +280,10 @@ bouncedDirection dir normal = new_dir { getDRotation = old_drotation }
     delta = projection -. reverse_dir
     new_dir = projection +. delta
     old_drotation = getDRotation dir
+
+-- | A shortcut for direction where all components are zero.
+zeroDirection :: Direction
+zeroDirection = direction 0.0 0.0 0.0
 
 -- | Normalizes the direction: changes the size of the vector to 1, preserving
 -- its direction. Zero direction is returned unmodified.

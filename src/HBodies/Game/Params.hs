@@ -42,6 +42,7 @@ asteroid_radius_range = (20.0, 30.0)
 asteroid_vertices_range = (6, 20) :: (Int, Int)
 -- | The ratio between the radius of an asteroid and its initial health.
 asteroid_health_ratio = 4.0
+asteroid_mass_ratio = 5.0
 asteroid_min_radius = 3.0
 asteroid_num_shards = 3 :: Int
 
@@ -50,11 +51,12 @@ shard_radius_ratio_range = (0.3, 0.6)
 shard_velocity_range = (5.0, 20.0)
 shard_angle_noise_range = (-0.5, 0.5)
 
-bullet_damage = 10.0
+bullet_damage = 6.0
 bullet_lifespan = Time.durationSeconds 1.0
 bullet_period = Time.durationSeconds 0.1
 bullet_speed = 130.0
 bullet_radius = 1.0
+bullet_mass = 1.0
 
 -- | The maximal health of the player.
 player_max_health = 100.0

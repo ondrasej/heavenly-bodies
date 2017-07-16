@@ -147,13 +147,17 @@ update asteroid = do
         GameState.addPlayerDamage 10.0
         GameState.setAsteroidCollision asteroid
     damage <- GameState.asteroidDamageById asteroid_id
+    impulse <- GameState.asteroidImpulseById asteroid_id
     let old_position = getPosition asteroid
         old_direction = getDirection asteroid
+        radius = getRadius asteroid
+        mass = Params.asteroid_mass_ratio * radius
         raw_position =
             Geometry.updatePosition duration old_position old_direction
         new_position =
             Geometry.boundedPosition (Geometry.keepRotation) raw_position 
-        new_direction = Geometry.boundedDirection raw_position old_direction
+        raw_direction = old_direction +. (1.0 / mass) *. impulse
+        new_direction = Geometry.boundedDirection raw_position raw_direction
         old_health = getHealth asteroid
         new_health = old_health - damage
     if new_health > 0.0

@@ -21,6 +21,8 @@ import qualified Control.Monad.State as MonadState
 import qualified Data.Map.Strict as Map
 import qualified HBodies.Asteroid.State as AsteroidState
 import qualified HBodies.Bullet.State as BulletState
+import qualified HBodies.Geometry as Geometry
+import HBodies.Geometry ((+.))
 import qualified HBodies.Inputs as Inputs
 import qualified HBodies.Particle.State as ParticleState
 import qualified HBodies.Player.State as PlayerState
@@ -67,6 +69,9 @@ data UpdateData = UpdateData
     , getAsteroidCollision :: Maybe AsteroidState.State
       -- | The damage inflicted to the asteroids during this frame.
     , getAsteroidDamage :: Map.Map AsteroidState.Id Double
+      -- | The impulses applied to asteroids, e.g. from bullet hits or
+      -- collisions with players.
+    , getAsteroidImpulses :: Map.Map AsteroidState.Id Geometry.Direction
       -- | The states of the asteroids in the following frame.
     , getUpdatedAsteroids :: !IndexedAsteroids
       -- | The states of the bullets in the following frame. Note that the list
@@ -108,6 +113,21 @@ addAsteroidDamage asteroid_id damage = MonadState.modify'$ \d ->
         new_damage = damage + Map.findWithDefault 0.0 asteroid_id damages
         new_damages = Map.insert asteroid_id new_damage damages
     in d { getAsteroidDamage = new_damages }
+
+-- | Records an impuls of force to the given asteroid in this frame.
+addAsteroidImpulse :: AsteroidState.Id
+                   -- ^ The ID of the asteroid receiving the impulse.
+                   -> Geometry.Direction
+                   -- ^ The magnitude of the impulse.
+                   -> Update ()
+addAsteroidImpulse asteroid_id impulse = MonadState.modify'$ \d ->
+    let impulses = getAsteroidImpulses d
+        old_impulse = Map.findWithDefault Geometry.zeroDirection
+                                          asteroid_id
+                                          impulses
+        new_impulse = impulse +. old_impulse
+        new_impulses = Map.insert asteroid_id new_impulse impulses
+    in d { getAsteroidImpulses = new_impulses }
 
 -- | Adds player damage in the current frame.
 addPlayerDamage :: Double
@@ -159,6 +179,15 @@ asteroidCollision = MonadState.gets$ getAsteroidCollision
 asteroidDamageById :: AsteroidState.Id -> Update Double
 asteroidDamageById asteroid_id =
     MonadState.gets$ Map.findWithDefault 0.0 asteroid_id . getAsteroidDamage
+
+-- | Returns the sum of all impulses of force applied to the asteroid with the
+-- given ID in the current frame.
+asteroidImpulseById :: AsteroidState.Id -> Update Geometry.Direction
+asteroidImpulseById asteroid_id =
+    MonadState.gets$ findImpulseOrDefault . getAsteroidImpulses
+  where
+    findImpulseOrDefault = Map.findWithDefault Geometry.zeroDirection
+                                               asteroid_id
 
 -- | Returns the "previous" state in the update monad.
 currentState :: Update State
@@ -253,6 +282,7 @@ runUpdate duration inputs old_state code = MonadState.execState code empty
         , getPlayerDamage = 0.0
         , getAsteroidCollision = Nothing
         , getAsteroidDamage = Map.empty
+        , getAsteroidImpulses = Map.empty
         , getUpdatedAsteroids = Map.empty
         , getUpdateNextAsteroidId = getStateNextAsteroidId old_state
         , getUpdatedBullets = []

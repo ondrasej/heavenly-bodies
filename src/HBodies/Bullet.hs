@@ -33,7 +33,7 @@ import qualified HBodies.Asteroid.State as AsteroidState
 import qualified HBodies.Game.Params as Params
 import qualified HBodies.Game.State as GameState
 import qualified HBodies.Geometry as Geometry
-import HBodies.Geometry ((+.))
+import HBodies.Geometry ((+.), (*.))
 import qualified HBodies.GLUtils as GLUtils
 import qualified HBodies.Player.State as PlayerState
 import qualified HBodies.Time as Time
@@ -82,8 +82,10 @@ update bullet = do
         collision = Foldable.find (AsteroidState.isCollision sphere) asteroids
     case collision of
         Just asteroid -> do
-            GameState.addAsteroidDamage (AsteroidState.getId asteroid)
-                                        Params.bullet_damage
+            let asteroid_id = AsteroidState.getId asteroid
+                impulse = Params.bullet_mass *. getDirection bullet
+            GameState.addAsteroidDamage asteroid_id Params.bullet_damage
+            GameState.addAsteroidImpulse asteroid_id impulse
         Nothing -> unless expired $do
             let position = getPosition bullet
                 direction = getDirection bullet
