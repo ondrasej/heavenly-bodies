@@ -17,34 +17,68 @@ maintainer:           mail@ondrejsykora.com
 copyright:            (c) 2017 Ondrej Sykora
 category:             Game
 build-type:           Custom
-cabal-version:        >=1.8
+cabal-version:        >=1.10
+custom-setup
+  setup-depends:      base,
+                      Cabal < 1.25,
+                      cabal-macosx
 
 executable heavenly-bodies
-  main-is:              Main.hs
-  build-depends:        base,
-                        containers,
-                        linear,
-                        mtl >= 2.2.0,
-                        OpenGL,
-                        random,
-                        sdl2 >= 2.0.0,
-                        text
-  hs-source-dirs:       src
+  main-is:            Main.hs
+  default-language:   Haskell98
+  build-depends:      base >= 4.7 && < 5,
+                      containers,
+                      linear,
+                      mtl >= 2.2.0,
+                      OpenGL,
+                      random,
+                      sdl2 >= 2.0.0,
+                      text
+  hs-source-dirs:     app,
+                      src
+  other-modules:      HBodies.Application
+                      HBodies.Asteroid
+                      HBodies.Asteroid.State
+                      HBodies.Bullet
+                      HBodies.Bullet.State
+                      HBodies.GLUtils
+                      HBodies.Game
+                      HBodies.Game.Params
+                      HBodies.Game.State
+                      HBodies.Geometry
+                      HBodies.Inputs
+                      HBodies.Math
+                      HBodies.Particle
+                      HBodies.Particle.State
+                      HBodies.Player
+                      HBodies.Player.State
+                      HBodies.SDLUtils
+                      HBodies.Time
 
 Test-Suite geometry-test
-  type:                 exitcode-stdio-1.0
-  main-is:              HBodies/GeometryTest.hs
-  build-depends:        base, hspec, sdl2 >= 2.0.0
-  hs-source-dirs:       src
+  type:               exitcode-stdio-1.0
+  main-is:            HBodies/GeometryTest.hs
+  default-language:   Haskell98
+  build-depends:      base,
+                      hspec,
+                      sdl2 >= 2.0.0
+  hs-source-dirs:     src,
+                      test
 
 Test-Suite math-test
-  type:                 exitcode-stdio-1.0
-  main-is:              HBodies/MathTest.hs
-  build-depends:        base, hspec
-  hs-source-dirs:       src
+  type:               exitcode-stdio-1.0
+  main-is:            HBodies/MathTest.hs
+  default-language:   Haskell98
+  build-depends:      base,
+                      hspec
+  hs-source-dirs:     src,
+                      test
 
 Test-Suite time-test
-  type:                 exitcode-stdio-1.0
-  main-is:              HBodies/TimeTest.hs
-  build-depends:        base, hspec, sdl2 >= 2.0.0
-  hs-source-dirs:       src
+  type:               exitcode-stdio-1.0
+  main-is:            HBodies/TimeTest.hs
+  build-depends:      base,
+                      hspec,
+                      sdl2 >= 2.0.0
+  hs-source-dirs:     src,
+                      test

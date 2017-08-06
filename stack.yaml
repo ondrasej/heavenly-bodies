@@ -1,0 +1,11 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- .
+extra-deps:
+- cabal-macosx-0.2.4.0
+resolver: lts-9.0
+
+explicit-setup-deps:
+  "heavenly-bodies": true
+  entropy: false
