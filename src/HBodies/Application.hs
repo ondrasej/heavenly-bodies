@@ -71,8 +71,6 @@ data Application = App
       getApplicationSettings :: ApplicationSettings
       -- | The application window.
     , getMainWindow :: !SDL.Window
-      -- | The renderer in the application window.
-    , getRenderer :: !SDL.Renderer
       -- The state of the application event loop.
     , eventLoopState :: IORef.IORef ApplicationState
       -- The list of screens in the application.
@@ -95,12 +93,11 @@ createApplication :: ApplicationSettings
 createApplication app_settings = do
     SDL.initializeAll
     window <- SDL.createWindow window_title window_config
-    renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
+    _ <- SDL.glCreateContext window
     loop_state <- IORef.newIORef Active
     game_state <- IORef.newIORef Game.new
     return App { getApplicationSettings = app_settings
                , getMainWindow = window
-               , getRenderer = renderer
                , eventLoopState = loop_state
                , gameState = game_state }
   where
@@ -114,7 +111,6 @@ createApplication app_settings = do
 -- | Closes an application. Destroys the SDL objects.
 destroyApplication :: Application -> IO ()
 destroyApplication application = do
-    SDL.destroyRenderer (getRenderer application)
     SDL.destroyWindow (getMainWindow application)
     SDL.quit
 
@@ -173,8 +169,7 @@ render application = do
     game_state <- IORef.readIORef$ gameState application
     Game.render game_state
     
-    let renderer = getRenderer application
-    SDL.present renderer
+    SDL.glSwapWindow$ getMainWindow application
 
 -- | Runs the event loop of the application. Blocks until the application loop
 -- is finished.

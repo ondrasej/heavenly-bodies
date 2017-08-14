@@ -54,6 +54,8 @@ executable heavenly-bodies
                       HBodies.Player.State
                       HBodies.SDLUtils
                       HBodies.Time
+  if os(windows)
+    ghc-options:      -optl-mwindows
 
 Test-Suite geometry-test
   type:               exitcode-stdio-1.0
