@@ -1,47 +1,55 @@
 # Heavenly Bodies
 
-A space debris shooting game created in Haskell, as a programming exercise. Or
-maybe to relax a bit from C++, it's hard to say.
+A space debris shooting game created in Haskell, as a programming exercise. And
+to relax a bit from C++.
 
 ## How to play
 
-Left and right arrows turn the ship. Up arrow accelerates forward, down arrow
-accelerates backwards.
+Use the keyboard to control the game:
+
+* Up/down arrow: accelerate,
+* Left/right arrow: turn the ship,
+* Space: shooting,
+* Escape: end the game,
+* R: restart the game.
 
 ## Dependencies and Builiding the game
 
-The game and its dependencies are managed using Cabal. To build the game, simply
-run the following commands in the game directory.
+We use [Haskell Stack][Stack] to build the game and manage dependencies. Apart
+from Stack, you'll also need SDL2 installed.
 
-    cabal configure
-    cabal run
+To build or run the game, use Stack as usual:
 
-The game is built using OpenGL and SDL, and the following Hackage libraries are
-necessary to build it:
+    stack setup
+    stack build
 
-* `hspec` (for running tests)
-* `OpenGL`
-* `sdl2`
-* `text`
+You can run the game directly through Stack using:
 
-To build `sdl2` and `OpenGL`, you might also need to install the development
-versions of the native libraries. It is highly advisible to build the game
-inside a Cabal sandbox.
+    stack exec heavenly-bodies
 
-## Things to do before release
+[Stack]: https://www.haskellstack.org/
 
-* Make the asteroids interactive
-* Shooting at asteroids
-* Better bouncing:
+## Things yet to be done
+
+This is an informal list of things that would be nice to have before calling the
+game finished:
+
+* Add score, player death.
+* Make asteroids bounce from each other, make new asteroids appear.
+* Better player bouncing:
     * change the angle only if the player is turned more or less in the
-      direction in which she is flying, and has a good speed
+      direction in which she is flying, and has a good speed.
     * alternative idea: only change the angle if the player hits the edge of the
-      screen under a low angle
-* Tune the shades of grey
-* Full-screen mode
-* Try using vertex buffers to optimize rendering (no glVertex calls, yay!)
-* Try building and running it on Windows
-* Create an OS X bundle to make running it easier
+      screen under a low angle.
+* Add full-screen mode; make it the default.
+* Use 21st century OpenGL for rendering. Profiling has shown that about 20% of
+  CPU time used by the game is spent in glPushAttrib/glPopAttrib, which is not
+  the best use of processing power.
+* Add more visual effects.
+* Tune the shades of grey.
+* Balance the difficulty.
+* Add heat management as an additional game mechanic to prevent the players from
+  shooting all the time.
 
 ## License
 
