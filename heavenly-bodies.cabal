@@ -79,6 +79,7 @@ Test-Suite math-test
 Test-Suite time-test
   type:               exitcode-stdio-1.0
   main-is:            HBodies/TimeTest.hs
+  default-language:   Haskell98
   build-depends:      base,
                       hspec,
                       sdl2 >= 2.0.0
